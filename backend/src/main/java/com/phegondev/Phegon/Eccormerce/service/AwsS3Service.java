@@ -37,7 +37,7 @@ public class AwsS3Service {
             //create an s3 client with config credentials and region
             AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
                     .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                    .withRegion(Regions.US_EAST_2)
+                    .withRegion(Regions.AP_SOUTHEAST_2)
                     .build();
 
             //get input stream from photo
@@ -51,7 +51,7 @@ public class AwsS3Service {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, s3FileName, inputStream, metadata);
             s3Client.putObject(putObjectRequest);
 
-            return "https://" + bucketName + ".s3.us-east-2.amazonaws.com/" + s3FileName;
+            return "https://" + bucketName + ".s3.ap-southeast-2.amazonaws.com/" + s3FileName;
 
         }catch (IOException e){
             e.printStackTrace();
