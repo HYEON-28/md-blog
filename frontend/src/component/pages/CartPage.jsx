@@ -28,7 +28,7 @@ const CartPage = () => {
 
 
 
-    const handleCheckout = async () => {
+    const handleCheckout = () => {
         if (!ApiService.isAuthenticated()) {
             setMessage("You need to login first before you can place an order");
             setTimeout(() => {
@@ -37,37 +37,7 @@ const CartPage = () => {
             }, 3000);
             return;
         }
-
-        const orderItems = cart.map(item => ({
-            productId: item.id,
-            quantity: item.quantity
-        }));
-
-        const orderRequest = {
-            totalPrice,
-            items: orderItems,
-        }
-
-        try {
-            const response = await ApiService.createOrder(orderRequest);
-            setMessage(response.message)
-
-            setTimeout(() => {
-                setMessage('')
-            }, 5000);
-
-            if (response.status === 200) {
-                dispatch({ type: 'CLEAR_CART' })
-            }
-
-        } catch (error) {
-            setMessage(error.response?.data?.message || error.message || 'Failed to place an order');
-            setTimeout(() => {
-                setMessage('')
-            }, 3000);
-
-        }
-
+        navigate("/checkout");
     };
 
 
