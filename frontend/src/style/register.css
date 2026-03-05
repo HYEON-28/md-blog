@@ -29,7 +29,7 @@
     padding: 10px;
     border: none;
     border-radius: 5px;
-    background-color: #f68b1e;
+    background-color: #BF0000;
     color: white;
     cursor: pointer;
     font-weight: 800;
@@ -49,5 +49,5 @@
 }
 .register-link a{
     text-decoration: none;
-    color: #f68b1e;
+    color: #BF0000;
 }

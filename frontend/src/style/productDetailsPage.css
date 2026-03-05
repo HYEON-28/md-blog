@@ -22,7 +22,7 @@
 .product-detail span{
     display: block;
     font-size: 20px;
-    color: #f68b1e;
+    color: #BF0000;
 }
 .product-detail button{
     display: block;
@@ -30,7 +30,7 @@
     padding: 10px;
     border: none;
     border-radius: 5px;
-    background-color: #f68b1e;
+    background-color: #BF0000;
     color: white;
     font-size: 16px;
     cursor: pointer;

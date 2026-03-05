@@ -19,7 +19,7 @@
     margin-bottom: 10px;
 }
 .profile-page strong{
-    color: #f68b1e;
+    color: #BF0000;
     font-size: 20px;
 }
 .profile-page ul{
@@ -63,7 +63,7 @@
 }
 
 .profile-button{
-    background-color: #f68b1e;
+    background-color: #BF0000;
     padding: 13px;
     font-weight: 700;
     border: 1px solid white;
