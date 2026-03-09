@@ -158,6 +158,14 @@ export default class ApiService {
 
 
 
+    /**TOSS PAYMENTS */
+    static async confirmTossPayment(body) {
+        const response = await axios.post(`${this.BASE_URL}/payment/confirm`, body, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
     /**ADDRESS */
     static async saveAddress(body) {
         const response = await axios.post(`${this.BASE_URL}/address/save`, body, {

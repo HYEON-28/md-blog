@@ -1,99 +1,62 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ApiService from "../../service/ApiService";
+import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 import { useCart } from "../context/CartContext";
 import '../../style/checkout.css';
 
+const TOSS_CLIENT_KEY = process.env.REACT_APP_TOSS_CLIENT_KEY || "test_ck_YOUR_CLIENT_KEY_HERE";
+
 const CheckoutPage = () => {
-    const { cart, dispatch } = useCart();
+    const { cart } = useCart();
     const navigate = useNavigate();
     const [message, setMessage] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const [paymentInfo, setPaymentInfo] = useState({
-        cardHolder: '',
-        cardNumber: '',
-        expiry: '',
-        cvv: '',
-    });
-
     const totalPrice = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+    const amountKRW = Math.round(totalPrice);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-
-        if (name === 'cardNumber') {
-            const digits = value.replace(/\D/g, '').slice(0, 16);
-            const formatted = digits.replace(/(.{4})/g, '$1 ').trim();
-            setPaymentInfo(prev => ({ ...prev, cardNumber: formatted }));
-            return;
-        }
-
-        if (name === 'expiry') {
-            const digits = value.replace(/\D/g, '').slice(0, 4);
-            const formatted = digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
-            setPaymentInfo(prev => ({ ...prev, expiry: formatted }));
-            return;
-        }
-
-        if (name === 'cvv') {
-            const digits = value.replace(/\D/g, '').slice(0, 3);
-            setPaymentInfo(prev => ({ ...prev, cvv: digits }));
-            return;
-        }
-
-        setPaymentInfo(prev => ({ ...prev, [name]: value }));
-    };
-
-    const validatePayment = () => {
-        const { cardHolder, cardNumber, expiry, cvv } = paymentInfo;
-        if (!cardHolder.trim()) return '카드 소유자 이름을 입력해주세요.';
-        if (cardNumber.replace(/\s/g, '').length !== 16) return '카드 번호를 올바르게 입력해주세요.';
-        if (!/^\d{2}\/\d{2}$/.test(expiry)) return '유효기간을 올바르게 입력해주세요. (MM/YY)';
-        if (cvv.length !== 3) return 'CVV를 올바르게 입력해주세요.';
-        return null;
-    };
-
-    const handlePayment = async (e) => {
-        e.preventDefault();
-
-        const validationError = validatePayment();
-        if (validationError) {
-            setMessage(validationError);
-            setTimeout(() => setMessage(''), 3000);
-            return;
-        }
-
+    const handleTossPayment = async () => {
         setIsProcessing(true);
-        setMessage('결제를 처리 중입니다...');
-
-        // 결제 처리 시뮬레이션 (1.5초 딜레이)
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        const orderItems = cart.map(item => ({
-            productId: item.id,
-            quantity: item.quantity,
-        }));
-
-        const orderRequest = {
-            totalPrice,
-            items: orderItems,
-        };
+        setMessage(null);
 
         try {
-            const response = await ApiService.createOrder(orderRequest);
-            if (response.status === 200) {
-                dispatch({ type: 'CLEAR_CART' });
-                setMessage('결제가 완료되었습니다! 주문이 등록되었습니다.');
-                setTimeout(() => {
-                    navigate('/profile');
-                }, 2500);
-            } else {
-                setMessage(response.message || '주문 등록에 실패했습니다.');
-            }
+            const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+            const payment = tossPayments.payment({ customerKey: ANONYMOUS });
+
+            const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const orderItems = cart.map(item => ({
+                productId: item.id,
+                quantity: item.quantity,
+            }));
+
+            sessionStorage.setItem('pendingOrder', JSON.stringify({
+                orderId,
+                items: orderItems,
+                totalPrice: amountKRW,
+            }));
+
+            const orderName = cart.length === 1
+                ? cart[0].name
+                : `${cart[0].name} 외 ${cart.length - 1}건`;
+
+            await payment.requestPayment({
+                method: "CARD",
+                amount: { currency: "KRW", value: amountKRW },
+                orderId,
+                orderName,
+                successUrl: `${window.location.origin}/payment/success`,
+                failUrl: `${window.location.origin}/payment/fail`,
+                card: {
+                    useEscrow: false,
+                    flowMode: "DEFAULT",
+                    useCardPoint: false,
+                    useAppCardOnly: false,
+                },
+            });
         } catch (error) {
-            setMessage(error.response?.data?.message || error.message || '주문 등록에 실패했습니다.');
-        } finally {
+            if (error.code !== 'USER_CANCEL') {
+                setMessage('결제 요청 중 오류가 발생했습니다: ' + (error.message || ''));
+            }
             setIsProcessing(false);
         }
     };
@@ -111,9 +74,7 @@ const CheckoutPage = () => {
         <div className="checkout-page">
             <h1>결제</h1>
             {message && (
-                <p className={`checkout-message ${message.includes('완료') ? 'success' : ''}`}>
-                    {message}
-                </p>
+                <p className="checkout-message">{message}</p>
             )}
 
             <div className="checkout-container">
@@ -128,68 +89,24 @@ const CheckoutPage = () => {
                                     <span className="item-name">{item.name}</span>
                                     <span className="item-qty">수량: {item.quantity}</span>
                                 </div>
-                                <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                                <span className="item-price">
+                                    {(item.price * item.quantity).toLocaleString()}원
+                                </span>
                             </li>
                         ))}
                     </ul>
                     <div className="order-total">
                         <span>총 결제금액</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span>{amountKRW.toLocaleString()}원</span>
                     </div>
                 </div>
 
-                {/* 결제 정보 입력 */}
-                <form className="payment-form" onSubmit={handlePayment}>
-                    <h2>결제 정보</h2>
-
-                    <div className="form-group">
-                        <label>카드 소유자 이름</label>
-                        <input
-                            type="text"
-                            name="cardHolder"
-                            value={paymentInfo.cardHolder}
-                            onChange={handleInputChange}
-                            placeholder="홍길동"
-                            disabled={isProcessing}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>카드 번호</label>
-                        <input
-                            type="text"
-                            name="cardNumber"
-                            value={paymentInfo.cardNumber}
-                            onChange={handleInputChange}
-                            placeholder="1234 5678 9012 3456"
-                            disabled={isProcessing}
-                        />
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>유효기간</label>
-                            <input
-                                type="text"
-                                name="expiry"
-                                value={paymentInfo.expiry}
-                                onChange={handleInputChange}
-                                placeholder="MM/YY"
-                                disabled={isProcessing}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>CVV</label>
-                            <input
-                                type="text"
-                                name="cvv"
-                                value={paymentInfo.cvv}
-                                onChange={handleInputChange}
-                                placeholder="123"
-                                disabled={isProcessing}
-                            />
-                        </div>
-                    </div>
+                {/* 결제 수단 */}
+                <div className="payment-form">
+                    <h2>결제 수단</h2>
+                    <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.95em' }}>
+                        토스페이먼츠를 통해 안전하게 결제합니다.
+                    </p>
 
                     <div className="checkout-actions">
                         <button
@@ -201,14 +118,15 @@ const CheckoutPage = () => {
                             장바구니로 돌아가기
                         </button>
                         <button
-                            type="submit"
+                            type="button"
                             className="pay-button"
+                            onClick={handleTossPayment}
                             disabled={isProcessing}
                         >
-                            {isProcessing ? '처리 중...' : `$${totalPrice.toFixed(2)} 결제하기`}
+                            {isProcessing ? '처리 중...' : `${amountKRW.toLocaleString()}원 결제하기`}
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

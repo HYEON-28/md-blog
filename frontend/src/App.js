@@ -23,6 +23,8 @@ import EditProductPage from './component/admin/EditProductPage';
 import AdminOrdersPage from './component/admin/AdminOrderPage';
 import AdminOrderDetailsPage from './component/admin/AdminOrderDetailsPage';
 import CheckoutPage from './component/pages/CheckoutPage';
+import PaymentSuccessPage from './component/pages/PaymentSuccessPage';
+import PaymentFailPage from './component/pages/PaymentFailPage';
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
           <Route path='/category/:categoryId' element={<CategoryProductsPage/>} />
           <Route path='/cart' element={<CartPage/>}/>
           <Route path='/checkout' element={<ProtectedRoute element={<CheckoutPage/>} />}/>
+          <Route path='/payment/success' element={<ProtectedRoute element={<PaymentSuccessPage/>} />}/>
+          <Route path='/payment/fail' element={<PaymentFailPage/>}/>
           <Route path='/register' element={<RegisterPage/>}/>
           <Route path='/login' element={<LoginPage/>}/>
 
