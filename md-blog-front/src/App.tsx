@@ -1,10 +1,9 @@
-import "./App.css";
 import GitLink from "./pages/GitLink";
 import Landing from "./pages/Landing";
 import Main from "./pages/Main";
 
 function App() {
-  const isLoggedIn = true;
+  const isLoggedIn = false;
   const isGitLinked = false;
 
   if (!isLoggedIn) {
