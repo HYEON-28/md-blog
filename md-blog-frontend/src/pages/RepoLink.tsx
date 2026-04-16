@@ -1,177 +1,51 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Nav from "../components/Nav";
 import { useLang } from "../context/LangContext";
-import { GITLINK_I18N } from "../i18n/gitlink";
-import styles from "./GitLink.module.css";
+import { useAuth } from "../context/AuthContext";
+import { REPOLINK_I18N } from "../i18n/repolink";
+import { getPublicRepos } from "../api/repoApi";
+import type { GithubRepo } from "../api/repoApi";
+import styles from "./RepoLink.module.css";
 
-const REPOS = [
-  {
-    name: "ai-chat-api",
-    desc: "실시간 AI 채팅 REST API 서버, WebSocket 지원",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    stars: 187,
-    forks: 23,
-    updated: "5일 전",
-  },
-  {
-    name: "blog-engine",
-    desc: "마크다운 기반 정적 블로그 생성기",
-    lang: "JavaScript",
-    langColor: "#f1e05a",
-    stars: 19,
-    forks: 3,
-    updated: "2달 전",
-  },
-  {
-    name: "cli-tools",
-    desc: "개발 생산성을 위한 CLI 유틸리티 모음",
-    lang: "Go",
-    langColor: "#00ADD8",
-    stars: 34,
-    forks: 6,
-    updated: "3주 전",
-  },
-  {
-    name: "css-animations",
-    desc: "웹 애니메이션 예제 및 스니펫 모음",
-    lang: "JavaScript",
-    langColor: "#f1e05a",
-    stars: 22,
-    forks: 4,
-    updated: "1달 전",
-  },
-  {
-    name: "data-pipeline",
-    desc: "ETL 파이프라인 — Kafka + Spark 기반 스트리밍 처리",
-    lang: "Python",
-    langColor: "#3572A5",
-    stars: 64,
-    forks: 11,
-    updated: "3일 전",
-  },
-  {
-    name: "design-system",
-    desc: "사내 디자인 시스템 컴포넌트 라이브러리",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    stars: 203,
-    forks: 41,
-    updated: "1일 전",
-  },
-  {
-    name: "design-tokens",
-    desc: "디자인 토큰 중앙 관리 시스템 및 CLI 생성 도구",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    stars: 47,
-    forks: 8,
-    updated: "1주 전",
-  },
-  {
-    name: "dom-helpers",
-    desc: "크로스 브라우저 DOM 조작 헬퍼 함수 모음",
-    lang: "JavaScript",
-    langColor: "#f1e05a",
-    stars: 14,
-    forks: 2,
-    updated: "6주 전",
-  },
-  {
-    name: "dotfiles",
-    desc: "개인 개발환경 설정 (zsh, nvim, tmux)",
-    lang: "Go",
-    langColor: "#00ADD8",
-    stars: 11,
-    forks: 1,
-    updated: "5일 전",
-  },
-  {
-    name: "fastapi-template",
-    desc: "FastAPI 프로젝트 보일러플레이트 (JWT, Docker 포함)",
-    lang: "Python",
-    langColor: "#3572A5",
-    stars: 88,
-    forks: 19,
-    updated: "4일 전",
-  },
-  {
-    name: "go-microservice",
-    desc: "gRPC 기반 마이크로서비스 보일러플레이트",
-    lang: "Go",
-    langColor: "#00ADD8",
-    stars: 78,
-    forks: 17,
-    updated: "4일 전",
-  },
-  {
-    name: "k8s-configs",
-    desc: "프로덕션 Kubernetes 배포 설정 모음",
-    lang: "Go",
-    langColor: "#00ADD8",
-    stars: 45,
-    forks: 12,
-    updated: "1주 전",
-  },
-  {
-    name: "ml-classifier",
-    desc: "이미지 분류 모델 학습 및 서빙 파이프라인",
-    lang: "Python",
-    langColor: "#3572A5",
-    stars: 113,
-    forks: 29,
-    updated: "2주 전",
-  },
-  {
-    name: "next-portfolio",
-    desc: "개인 포트폴리오 사이트 — Next.js 14 App Router 기반",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    stars: 42,
-    forks: 8,
-    updated: "2일 전",
-  },
-  {
-    name: "react-hooks-kit",
-    desc: "자주 쓰는 커스텀 훅 모음 라이브러리",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    stars: 91,
-    forks: 15,
-    updated: "1주 전",
-  },
-  {
-    name: "rust-parser",
-    desc: "고성능 로그 파서 — Rust로 구현",
-    lang: "Rust",
-    langColor: "#dea584",
-    stars: 56,
-    forks: 9,
-    updated: "6일 전",
-  },
-  {
-    name: "ts-utils",
-    desc: "타입 유틸리티 함수 모음 및 제네릭 헬퍼",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    stars: 31,
-    forks: 5,
-    updated: "3주 전",
-  },
-  {
-    name: "wasm-renderer",
-    desc: "WebAssembly 기반 경량 2D 렌더러",
-    lang: "Rust",
-    langColor: "#dea584",
-    stars: 72,
-    forks: 14,
-    updated: "2주 전",
-  },
-];
+const LANG_COLORS: Record<string, string> = {
+  TypeScript: "#3178c6",
+  JavaScript: "#f1e05a",
+  Python: "#3572A5",
+  Go: "#00ADD8",
+  Rust: "#dea584",
+  Java: "#b07219",
+  Kotlin: "#A97BFF",
+  Swift: "#F05138",
+  Ruby: "#701516",
+  PHP: "#4F5D95",
+  "C++": "#f34b7d",
+  C: "#555555",
+  "C#": "#178600",
+  Dart: "#00B4AB",
+  Shell: "#89e051",
+  HTML: "#e34c26",
+  CSS: "#563d7c",
+  Vue: "#41b883",
+};
 
-function GitLink() {
+function timeAgo(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return "오늘";
+  if (days < 7) return `${days}일 전`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}주 전`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}달 전`;
+  return `${Math.floor(months / 12)}년 전`;
+}
+
+function RepoLink() {
   const { lang } = useLang();
-  const t = GITLINK_I18N[lang];
+  const { token } = useAuth();
+  const t = REPOLINK_I18N[lang];
+  const [repos, setRepos] = useState<GithubRepo[]>([]);
+  const [isRepoLoading, setIsRepoLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -179,16 +53,28 @@ function GitLink() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
 
+  useEffect(() => {
+    if (!token) return;
+    getPublicRepos(token)
+      .then(setRepos)
+      .finally(() => setIsRepoLoading(false));
+  }, [token]);
+
+  const availableLangs = useMemo(
+    () => [...new Set(repos.map((r) => r.language).filter(Boolean) as string[])].sort(),
+    [repos],
+  );
+
   const filteredRepos = useMemo(
     () =>
-      REPOS.filter(
+      repos.filter(
         (r) =>
           (!searchQuery ||
             r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            r.desc.toLowerCase().includes(searchQuery.toLowerCase())) &&
-          (!langFilter || r.lang === langFilter),
+            (r.description ?? "").toLowerCase().includes(searchQuery.toLowerCase())) &&
+          (!langFilter || r.language === langFilter),
       ),
-    [searchQuery, langFilter],
+    [repos, searchQuery, langFilter],
   );
 
   const toggleRepo = (name: string) => {
@@ -277,11 +163,9 @@ function GitLink() {
               onChange={(e) => setLangFilter(e.target.value)}
             >
               <option value="">{t.lang_all}</option>
-              <option value="TypeScript">TypeScript</option>
-              <option value="JavaScript">JavaScript</option>
-              <option value="Python">Python</option>
-              <option value="Go">Go</option>
-              <option value="Rust">Rust</option>
+              {availableLangs.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
             </select>
           </div>
           <span className={styles.countBadge}>
@@ -323,7 +207,11 @@ function GitLink() {
 
         <div className={styles.repoListOuter}>
           <div className={`${styles.repoListBody}${isCollapsed ? " " + styles.collapsed : ""}`}>
-            {filteredRepos.length === 0 ? (
+            {isRepoLoading ? (
+              <div style={{ padding: "48px 24px", textAlign: "center", fontSize: 14, color: "#8b949e" }}>
+                불러오는 중...
+              </div>
+            ) : filteredRepos.length === 0 ? (
               <div style={{ padding: "48px 24px", textAlign: "center" }}>
                 <div style={{ fontSize: 28, marginBottom: 12 }}>🔍</div>
                 <div style={{ fontSize: 14, color: "#8b949e" }}>
@@ -349,15 +237,17 @@ function GitLink() {
                       <span className={styles.repoName}>{r.name}</span>
                       <span className={styles.repoVis}>{t.repo_public}</span>
                     </div>
-                    <div className={styles.repoDesc}>{r.desc}</div>
+                    <div className={styles.repoDesc}>{r.description}</div>
                     <div className={styles.repoMeta}>
-                      <span className={styles.metaItem}>
-                        <span
-                          className={styles.langDot}
-                          style={{ background: r.langColor }}
-                        ></span>
-                        {r.lang}
-                      </span>
+                      {r.language && (
+                        <span className={styles.metaItem}>
+                          <span
+                            className={styles.langDot}
+                            style={{ background: LANG_COLORS[r.language] ?? "#8b949e" }}
+                          ></span>
+                          {r.language}
+                        </span>
+                      )}
                       <span className={styles.metaItem}>
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
                           <path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z" />
@@ -371,7 +261,7 @@ function GitLink() {
                         {r.forks}
                       </span>
                       <span className={styles.metaItem} style={{ color: "#484f58" }}>
-                        {t.updated} {r.updated}
+                        {t.updated} {timeAgo(r.updatedAt)}
                       </span>
                     </div>
                   </div>
@@ -452,4 +342,4 @@ function GitLink() {
   );
 }
 
-export default GitLink;
+export default RepoLink;

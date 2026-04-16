@@ -1,7 +1,7 @@
 import { Navigate, Routes, Route } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import AuthCallback from "./pages/AuthCallback";
-import GitLink from "./pages/GitLink";
+import RepoLink from "./pages/RepoLink";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Main from "./pages/Main";
@@ -23,7 +23,7 @@ function App() {
       <Route path="/" element={getRootElement()} />
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/gitlink" element={<GitLink />} />
+      <Route path="/repolink" element={<RepoLink />} />
       <Route path="/main" element={<Main />} />
     </Routes>
   );

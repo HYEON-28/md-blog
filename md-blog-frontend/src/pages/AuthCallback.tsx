@@ -16,7 +16,7 @@ function AuthCallback() {
     }
     login(token)
       .then(() => hasLinkedRepo(token))
-      .then((linked) => navigate(linked ? "/main" : "/gitlink", { replace: true }))
+      .then((linked) => navigate(linked ? "/main" : "/repolink", { replace: true }))
       .catch(() => navigate("/login?error=true", { replace: true }));
   }, []);
 

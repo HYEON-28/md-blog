@@ -1,6 +1,6 @@
 import type { Lang } from ".";
 
-export const GITLINK_I18N: Record<Lang, Record<string, string>> = {
+export const REPOLINK_I18N: Record<Lang, Record<string, string>> = {
   ko: {
     badge: "step 1 of 2 — repository setup",
     title: "연동할 GitHub 레포지토리를\n선택하세요",

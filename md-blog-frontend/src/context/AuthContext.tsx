@@ -4,6 +4,7 @@ import type { User } from "../api/authApi";
 
 interface AuthContextValue {
   user: User | null;
+  token: string | null;
   isLoggedIn: boolean;
   isLoading: boolean;
   login: (token: string) => Promise<void>;
@@ -16,34 +17,40 @@ const TOKEN_KEY = "md-blog.token";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
+    const stored = localStorage.getItem(TOKEN_KEY);
+    if (!stored) {
       setIsLoading(false);
       return;
     }
-    getMe(token)
-      .then(setUser)
+    getMe(stored)
+      .then((me) => {
+        setUser(me);
+        setToken(stored);
+      })
       .catch(() => localStorage.removeItem(TOKEN_KEY))
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = async (token: string) => {
-    localStorage.setItem(TOKEN_KEY, token);
-    const me = await getMe(token);
+  const login = async (newToken: string) => {
+    localStorage.setItem(TOKEN_KEY, newToken);
+    const me = await getMe(newToken);
     setUser(me);
+    setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    setToken(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoggedIn: !!user, isLoading, login, logout }}
+      value={{ user, token, isLoggedIn: !!user, isLoading, login, logout }}
     >
       {children}
     </AuthContext.Provider>
