@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { hasLinkedRepo } from "../api/authApi";
 
 function AuthCallback() {
   const [searchParams] = useSearchParams();
@@ -14,7 +15,8 @@ function AuthCallback() {
       return;
     }
     login(token)
-      .then(() => navigate("/main", { replace: true }))
+      .then(() => hasLinkedRepo(token))
+      .then((linked) => navigate(linked ? "/main" : "/gitlink", { replace: true }))
       .catch(() => navigate("/login?error=true", { replace: true }));
   }, []);
 

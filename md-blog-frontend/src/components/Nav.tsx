@@ -24,7 +24,10 @@ function Nav() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -102,7 +105,10 @@ function Nav() {
             <button
               type="button"
               className={`${styles.btn} ${styles.btnGhost}`}
-              onClick={() => { logout(); navigate("/"); }}
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
             >
               {t.logout}
             </button>
@@ -112,7 +118,10 @@ function Nav() {
             <Link to="/login" className={`${styles.btn} ${styles.btnGhost}`}>
               {t.login}
             </Link>
-            <Link to="/login?mode=signup" className={`${styles.btn} ${styles.btnGreen}`}>
+            <Link
+              to="/login?mode=signup"
+              className={`${styles.btn} ${styles.btnGreen}`}
+            >
               {t.signup}
             </Link>
           </>

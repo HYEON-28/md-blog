@@ -8,7 +8,6 @@ import Main from "./pages/Main";
 
 function App() {
   const { isLoggedIn, isLoading } = useAuth();
-  const isGitLinked = false;
 
   if (isLoading) {
     return null;
@@ -16,7 +15,6 @@ function App() {
 
   const getRootElement = () => {
     if (!isLoggedIn) return <Landing />;
-    if (!isGitLinked) return <Navigate to="/gitlink" replace />;
     return <Navigate to="/main" replace />;
   };
 
