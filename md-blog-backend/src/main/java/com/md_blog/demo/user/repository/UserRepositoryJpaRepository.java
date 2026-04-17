@@ -7,5 +7,6 @@ import java.util.UUID;
 
 public interface UserRepositoryJpaRepository extends JpaRepository<UserRepositoryEntity, UUID> {
     boolean existsByUserIdAndActiveTrue(UUID userId);
+    boolean existsByUserIdAndRepositoryId(UUID userId, UUID repositoryId);
 }
 

@@ -4,6 +4,7 @@ import { LANDING_I18N } from "../i18n/landing";
 import { useLang } from "../context/LangContext";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
+import { Link } from "react-router-dom";
 
 function Landing() {
   const { lang } = useLang();
@@ -64,7 +65,7 @@ function Landing() {
           dangerouslySetInnerHTML={{ __html: t.hero_desc }}
         />
         <div className="hero-cta">
-          <a href="#" className="btn-hero-green">
+          <Link to="login?mode=signup" className="btn-hero-green">
             <svg width="16" height="16" viewBox="0 0 98 96" fill="white">
               <path
                 fillRule="evenodd"
@@ -73,7 +74,7 @@ function Landing() {
               />
             </svg>
             <span>{t.hero_cta_primary}</span>
-          </a>
+          </Link>
           <a
             href="#features"
             className="btn-hero-outline"

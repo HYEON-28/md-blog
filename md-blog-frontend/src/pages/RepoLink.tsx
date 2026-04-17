@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Nav from "../components/Nav";
 import { useLang } from "../context/LangContext";
 import { useAuth } from "../context/AuthContext";
 import { REPOLINK_I18N } from "../i18n/repolink";
-import { getPublicRepos } from "../api/repoApi";
+import { getPublicRepos, connectRepos } from "../api/repoApi";
 import type { GithubRepo } from "../api/repoApi";
 import styles from "./RepoLink.module.css";
 
@@ -43,9 +44,11 @@ function timeAgo(isoString: string): string {
 function RepoLink() {
   const { lang } = useLang();
   const { token } = useAuth();
+  const navigate = useNavigate();
   const t = REPOLINK_I18N[lang];
   const [repos, setRepos] = useState<GithubRepo[]>([]);
   const [isRepoLoading, setIsRepoLoading] = useState(true);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,10 +100,22 @@ function RepoLink() {
   const someChecked = filteredRepos.some((r) => selected.has(r.name));
   const selectedNames = [...selected];
 
-  const handleConnect = () => {
-    setToastMsg(`${selected.size}${t.toast_success}`);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const handleConnect = async () => {
+    if (!token || selected.size === 0) return;
+    const selectedRepos = repos.filter((r) => selected.has(r.name));
+    setIsConnecting(true);
+    try {
+      await connectRepos(token, selectedRepos);
+      setToastMsg(`${selected.size}${t.toast_success}`);
+      setShowToast(true);
+      setTimeout(() => navigate("/main"), 2000);
+    } catch {
+      setToastMsg("연동 중 오류가 발생했습니다.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   return (
@@ -313,7 +328,7 @@ function RepoLink() {
             <button className={styles.btnSkip}>{t.btn_skip}</button>
             <button
               className={styles.btnConnect}
-              disabled={selected.size === 0}
+              disabled={selected.size === 0 || isConnecting}
               onClick={handleConnect}
             >
               <svg

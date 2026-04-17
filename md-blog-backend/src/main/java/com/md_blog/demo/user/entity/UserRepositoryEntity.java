@@ -28,6 +28,6 @@ public class UserRepositoryEntity {
     @Column(name = "connected_at", nullable = false)
     private LocalDateTime connectedAt;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active;
 }

@@ -1,14 +1,14 @@
 package com.md_blog.demo.repo.controller;
 
+import com.md_blog.demo.repo.dto.ConnectReposRequest;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
 import com.md_blog.demo.repo.service.GithubApiService;
+import com.md_blog.demo.repo.service.RepoConnectService;
 import com.md_blog.demo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,6 +18,7 @@ import java.util.List;
 public class RepoController {
 
     private final GithubApiService githubApiService;
+    private final RepoConnectService repoConnectService;
 
     @GetMapping("/public")
     public ResponseEntity<List<GithubRepoDto>> getPublicRepos(@AuthenticationPrincipal User user) {
@@ -26,5 +27,17 @@ public class RepoController {
         }
         List<GithubRepoDto> repos = githubApiService.getPublicRepos(user.getAccessToken());
         return ResponseEntity.ok(repos);
+    }
+
+    @PostMapping("/connect")
+    public ResponseEntity<Void> connectRepos(
+            @AuthenticationPrincipal User user,
+            @RequestBody ConnectReposRequest request
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        repoConnectService.connectRepos(user, request.repos());
+        return ResponseEntity.ok().build();
     }
 }
