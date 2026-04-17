@@ -1,6 +1,7 @@
 package com.md_blog.demo.repo.controller;
 
 import com.md_blog.demo.repo.dto.ConnectReposRequest;
+import com.md_blog.demo.repo.dto.ConnectedRepoResponse;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
 import com.md_blog.demo.repo.service.GithubApiService;
 import com.md_blog.demo.repo.service.RepoConnectService;
@@ -19,6 +20,14 @@ public class RepoController {
 
     private final GithubApiService githubApiService;
     private final RepoConnectService repoConnectService;
+
+    @GetMapping("/connected")
+    public ResponseEntity<List<ConnectedRepoResponse>> getConnectedRepos(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(repoConnectService.getConnectedRepos(user));
+    }
 
     @GetMapping("/public")
     public ResponseEntity<List<GithubRepoDto>> getPublicRepos(@AuthenticationPrincipal User user) {

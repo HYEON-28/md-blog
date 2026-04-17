@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class GithubApiService {
@@ -31,6 +32,20 @@ public class GithubApiService {
         return response.stream()
                 .filter(r -> !r.isPrivate())
                 .map(GithubRepoDto::from)
+                .toList();
+    }
+
+    public List<GithubRepoDto.GithubApiResponse> getReposByIds(String accessToken, Set<Long> githubRepoIds) {
+        List<GithubRepoDto.GithubApiResponse> response = restClient.get()
+                .uri("/user/repos?type=all&sort=pushed&per_page=100")
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+
+        if (response == null) return List.of();
+
+        return response.stream()
+                .filter(r -> githubRepoIds.contains(r.id()))
                 .toList();
     }
 }

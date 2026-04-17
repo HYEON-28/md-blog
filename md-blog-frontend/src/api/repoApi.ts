@@ -1,5 +1,14 @@
 const BASE_URL = "http://localhost:8080";
 
+export interface ConnectedRepo {
+  githubRepoId: number;
+  name: string;
+  description: string | null;
+  language: string | null;
+  htmlUrl: string;
+  pushedAt: string;
+}
+
 export interface GithubRepo {
   githubRepoId: number;
   ownerGithubId: number;
@@ -19,6 +28,14 @@ export async function getPublicRepos(token: string): Promise<GithubRepo[]> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch repos");
+  return res.json();
+}
+
+export async function getConnectedRepos(token: string): Promise<ConnectedRepo[]> {
+  const res = await fetch(`${BASE_URL}/api/repos/connected`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch connected repos");
   return res.json();
 }
 

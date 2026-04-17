@@ -26,6 +26,7 @@ public record GithubRepoDto(
             @JsonProperty("stargazers_count") int stargazersCount,
             @JsonProperty("forks_count") int forksCount,
             @JsonProperty("updated_at") String updatedAt,
+            @JsonProperty("pushed_at") String pushedAt,
             @JsonProperty("private") boolean isPrivate,
             @JsonProperty("html_url") String htmlUrl,
             @JsonProperty("default_branch") String defaultBranch,

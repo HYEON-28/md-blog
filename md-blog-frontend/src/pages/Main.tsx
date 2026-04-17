@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Footer from "../components/Footer";
 import Nav from "../components/Nav";
 import styles from "./Main.module.css";
+import { getConnectedRepos, type ConnectedRepo } from "../api/repoApi";
+import { useAuth } from "../context/AuthContext";
 
-type Repo = {
-  name: string;
-  desc: string;
-  lang: string;
-  langColor: string;
-  isBlog: boolean;
-  updated: string;
+const LANG_COLORS: Record<string, string> = {
+  TypeScript: "#3178c6",
+  JavaScript: "#f1e05a",
+  Python: "#3572A5",
+  Go: "#00ADD8",
+  Rust: "#dea584",
+  Java: "#b07219",
+  Kotlin: "#A97BFF",
+  Swift: "#F05138",
+  Ruby: "#701516",
+  "C++": "#f34b7d",
+  C: "#555555",
+  "C#": "#178600",
+  PHP: "#4F5D95",
+  Shell: "#89e051",
+  Dart: "#00B4AB",
 };
 
 type BlogRepo = {
@@ -39,65 +50,6 @@ type UpdateRepo = {
 };
 
 type SectionKey = "repo" | "blog" | "update";
-
-const REPOS: Repo[] = [
-  {
-    name: "design-system",
-    desc: "사내 디자인 시스템 컴포넌트 라이브러리",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    isBlog: true,
-    updated: "1시간 전",
-  },
-  {
-    name: "ai-chat-api",
-    desc: "실시간 AI 채팅 REST API 서버",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    isBlog: false,
-    updated: "3시간 전",
-  },
-  {
-    name: "react-hooks-kit",
-    desc: "자주 쓰는 커스텀 훅 모음 라이브러리",
-    lang: "TypeScript",
-    langColor: "#3178c6",
-    isBlog: true,
-    updated: "어제",
-  },
-  {
-    name: "data-pipeline",
-    desc: "ETL 파이프라인 — Kafka + Spark",
-    lang: "Python",
-    langColor: "#3572A5",
-    isBlog: false,
-    updated: "2일 전",
-  },
-  {
-    name: "go-microservice",
-    desc: "gRPC 기반 마이크로서비스 보일러플레이트",
-    lang: "Go",
-    langColor: "#00ADD8",
-    isBlog: false,
-    updated: "4일 전",
-  },
-  {
-    name: "rust-parser",
-    desc: "고성능 로그 파서",
-    lang: "Rust",
-    langColor: "#dea584",
-    isBlog: true,
-    updated: "1주 전",
-  },
-  {
-    name: "ml-classifier",
-    desc: "이미지 분류 모델 학습 및 서빙",
-    lang: "Python",
-    langColor: "#3572A5",
-    isBlog: false,
-    updated: "2주 전",
-  },
-];
 
 const BLOG_REPOS: BlogRepo[] = [
   { name: "design-system", mdCount: 11, published: 9, draft: 2 },
@@ -203,6 +155,18 @@ function dotClass(type: FileType): string {
 }
 
 function Main() {
+  const { token } = useAuth();
+  const [repos, setRepos] = useState<ConnectedRepo[]>([]);
+  const [reposLoading, setReposLoading] = useState(true);
+
+  useEffect(() => {
+    if (!token) return;
+    getConnectedRepos(token)
+      .then(setRepos)
+      .catch(console.error)
+      .finally(() => setReposLoading(false));
+  }, [token]);
+
   const [collapsed, setCollapsed] = useState<Record<SectionKey, boolean>>({
     repo: false,
     blog: false,
@@ -235,9 +199,9 @@ function Main() {
         <div className={styles.statRow}>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>연동된 레포지토리</div>
-            <div className={styles.statValue}>7</div>
+            <div className={styles.statValue}>{reposLoading ? "-" : repos.length}</div>
             <div className={styles.statSub} style={{ color: "#3fb950" }}>
-              +2 이번 달
+              연동된 레포
             </div>
           </div>
           <div className={styles.statCard}>
@@ -269,7 +233,7 @@ function Main() {
                 </svg>
               </div>
               <span className={styles.sectionTitle}>레포지토리 관리</span>
-              <span className={styles.sectionCount}>7</span>
+              <span className={styles.sectionCount}>{repos.length}</span>
             </div>
             <div className={styles.sectionHeaderRight}>
               <button
@@ -277,16 +241,14 @@ function Main() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <svg
-                  width="11"
-                  height="11"
+                  width="12"
+                  height="12"
                   viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
+                  fill="currentColor"
                 >
-                  <path d="M8 2v12M2 8h12" />
+                  <path d="M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.103-.303c-.066-.019-.176-.011-.299.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.212.224l-.288 1.107c-.17.644-.716 1.195-1.459 1.258a8.233 8.233 0 0 1-1.402 0c-.743-.063-1.289-.614-1.459-1.258l-.288-1.107c-.018-.066-.079-.158-.212-.224a5.898 5.898 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.103.303c.066.019.176.011.299-.071.214-.143.437-.272.668-.386.133-.066.194-.158.212-.224l.288-1.107C5.49.645 6.035.095 6.779.031 7.01.01 7.505 0 8 0Zm-.571 6.603a2 2 0 1 0 1.142 3.847 2 2 0 0 0-1.142-3.847Z"/>
                 </svg>
-                레포 추가
+                레포 설정
               </button>
               <svg
                 className={cx(styles.chevron, !collapsed.repo && styles.open)}
@@ -306,58 +268,38 @@ function Main() {
             )}
           >
             <div>
-              {REPOS.map((r) => (
-                <div key={r.name} className={styles.repoItem}>
-                  <span
-                    className={styles.repoDot}
-                    style={{ background: r.langColor }}
-                  ></span>
-                  <div className={styles.repoInfo}>
-                    <div className={styles.repoName}>{r.name}</div>
-                    <div className={styles.repoDesc}>{r.desc}</div>
-                  </div>
-                  <div className={styles.repoMetaRight}>
-                    <span className={cx(styles.tag, styles.tagLang)}>
-                      {r.lang}
-                    </span>
-                    {r.isBlog && (
-                      <span className={cx(styles.tag, styles.tagBlog)}>
-                        블로그
-                      </span>
-                    )}
-                    <span className={cx(styles.tag, styles.tagActive)}>
-                      연동됨
-                    </span>
-                    <span className={styles.repoUpdated}>{r.updated}</span>
-                  </div>
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="#484f58"
-                    strokeWidth="1.6"
-                    style={{ flexShrink: 0, marginLeft: 4 }}
-                  >
-                    <path d="M6 3l5 5-5 5" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-            <div className={styles.sectionFooter}>
-              <a className={styles.footerLink} href="#">
-                전체 레포지토리 관리
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                >
-                  <path d="M1 8h14M9 2l6 6-6 6" />
-                </svg>
-              </a>
+              {reposLoading ? (
+                <div className={styles.loadingText}>불러오는 중...</div>
+              ) : repos.length === 0 ? (
+                <div className={styles.emptyText}>연동된 레포지토리가 없습니다.</div>
+              ) : (
+                repos.map((r) => {
+                  const langColor = LANG_COLORS[r.language ?? ""] ?? "#8b949e";
+                  return (
+                    <div key={r.githubRepoId} className={styles.repoItem}>
+                      <span
+                        className={styles.repoDot}
+                        style={{ background: langColor }}
+                      ></span>
+                      <div className={styles.repoInfo}>
+                        <div className={styles.repoName}>{r.name}</div>
+                        <div className={styles.repoDesc}>{r.description ?? ""}</div>
+                      </div>
+                      <div className={styles.repoMetaRight}>
+                        {r.language && (
+                          <span className={cx(styles.tag, styles.tagLang)}>
+                            {r.language}
+                          </span>
+                        )}
+                        <span className={cx(styles.tag, styles.tagActive)}>
+                          연동됨
+                        </span>
+                        <span className={styles.repoUpdated}>{r.pushedAt}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -383,16 +325,14 @@ function Main() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <svg
-                  width="11"
-                  height="11"
+                  width="12"
+                  height="12"
                   viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
+                  fill="currentColor"
                 >
-                  <path d="M8 2v12M2 8h12" />
+                  <path d="M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.103-.303c-.066-.019-.176-.011-.299.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.212.224l-.288 1.107c-.17.644-.716 1.195-1.459 1.258a8.233 8.233 0 0 1-1.402 0c-.743-.063-1.289-.614-1.459-1.258l-.288-1.107c-.018-.066-.079-.158-.212-.224a5.898 5.898 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.103.303c.066.019.176.011.299-.071.214-.143.437-.272.668-.386.133-.066.194-.158.212-.224l.288-1.107C5.49.645 6.035.095 6.779.031 7.01.01 7.505 0 8 0Zm-.571 6.603a2 2 0 1 0 1.142 3.847 2 2 0 0 0-1.142-3.847Z"/>
                 </svg>
-                블로그 추가
+                블로그 설정
               </button>
               <svg
                 className={cx(styles.chevron, !collapsed.blog && styles.open)}
@@ -437,34 +377,8 @@ function Main() {
                     </span>
                     <span className={styles.mdCount}>{br.mdCount} md</span>
                   </div>
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="#484f58"
-                    strokeWidth="1.6"
-                    style={{ flexShrink: 0, marginLeft: 4 }}
-                  >
-                    <path d="M6 3l5 5-5 5" />
-                  </svg>
                 </div>
               ))}
-            </div>
-            <div className={styles.sectionFooter}>
-              <a className={styles.footerLink} href="#">
-                블로그 전체 설정
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                >
-                  <path d="M1 8h14M9 2l6 6-6 6" />
-                </svg>
-              </a>
             </div>
           </div>
         </div>
@@ -566,21 +480,6 @@ function Main() {
                   </div>
                 </div>
               ))}
-            </div>
-            <div className={styles.sectionFooter}>
-              <a className={styles.footerLink} href="#">
-                전체 커밋 히스토리
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                >
-                  <path d="M1 8h14M9 2l6 6-6 6" />
-                </svg>
-              </a>
             </div>
           </div>
         </div>
