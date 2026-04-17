@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Nav from "../components/Nav";
 import styles from "./Main.module.css";
 import { getConnectedRepos, type ConnectedRepo } from "../api/repoApi";
 import { useAuth } from "../context/AuthContext";
+import { toRelativeTime } from "../utils/time";
 
 const LANG_COLORS: Record<string, string> = {
   TypeScript: "#3178c6",
@@ -156,6 +158,7 @@ function dotClass(type: FileType): string {
 
 function Main() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [repos, setRepos] = useState<ConnectedRepo[]>([]);
   const [reposLoading, setReposLoading] = useState(true);
 
@@ -238,7 +241,7 @@ function Main() {
             <div className={styles.sectionHeaderRight}>
               <button
                 className={styles.headerActionBtn}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); navigate("/repoSettings"); }}
               >
                 <svg
                   width="12"
@@ -294,7 +297,7 @@ function Main() {
                         <span className={cx(styles.tag, styles.tagActive)}>
                           연동됨
                         </span>
-                        <span className={styles.repoUpdated}>{r.pushedAt}</span>
+                        <span className={styles.repoUpdated}>{toRelativeTime(r.pushedAt)}</span>
                       </div>
                     </div>
                   );

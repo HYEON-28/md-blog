@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +46,7 @@ public class RepoConnectService {
                 .stream()
                 .collect(Collectors.toMap(
                         GithubRepoDto.GithubApiResponse::id,
-                        r -> toRelativeTime(r.pushedAt())
+                        GithubRepoDto.GithubApiResponse::pushedAt
                 ));
 
         return repos.stream()
@@ -61,25 +59,6 @@ public class RepoConnectService {
                         pushedAtMap.getOrDefault(r.getGithubRepoId(), "")
                 ))
                 .toList();
-    }
-
-    private String toRelativeTime(String iso8601) {
-        if (iso8601 == null || iso8601.isBlank()) return "";
-        OffsetDateTime pushed = OffsetDateTime.parse(iso8601);
-        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-        long minutes = ChronoUnit.MINUTES.between(pushed, now);
-        if (minutes < 1) return "방금 전";
-        if (minutes < 60) return minutes + "분 전";
-        long hours = ChronoUnit.HOURS.between(pushed, now);
-        if (hours < 24) return hours + "시간 전";
-        long days = ChronoUnit.DAYS.between(pushed, now);
-        if (days == 1) return "어제";
-        if (days < 7) return days + "일 전";
-        long weeks = days / 7;
-        if (weeks < 5) return weeks + "주 전";
-        long months = ChronoUnit.MONTHS.between(pushed, now);
-        if (months < 12) return months + "개월 전";
-        return ChronoUnit.YEARS.between(pushed, now) + "년 전";
     }
 
     public void connectRepos(User user, List<GithubRepoDto> repos) {
@@ -100,16 +79,30 @@ public class RepoConnectService {
                                     .build()
                     ));
 
-            if (!userRepositoryJpaRepository.existsByUserIdAndRepositoryId(user.getId(), repo.getId())) {
-                userRepositoryJpaRepository.save(
-                        UserRepositoryEntity.builder()
-                                .userId(user.getId())
-                                .repositoryId(repo.getId())
-                                .connectedAt(LocalDateTime.now())
-                                .active(true)
-                                .build()
-                );
-            }
+            userRepositoryJpaRepository
+                    .findByUserIdAndRepositoryId(user.getId(), repo.getId())
+                    .ifPresentOrElse(
+                            UserRepositoryEntity::activate,
+                            () -> userRepositoryJpaRepository.save(
+                                    UserRepositoryEntity.builder()
+                                            .userId(user.getId())
+                                            .repositoryId(repo.getId())
+                                            .connectedAt(LocalDateTime.now())
+                                            .active(true)
+                                            .build()
+                            )
+                    );
         }
+    }
+
+    public void disconnectRepos(User user, List<Long> githubRepoIds) {
+        List<RepositoryEntity> repos = repositoryJpaRepository.findAllByGithubRepoIdIn(githubRepoIds);
+        Set<java.util.UUID> repoIds = repos.stream()
+                .map(RepositoryEntity::getId)
+                .collect(Collectors.toSet());
+
+        List<UserRepositoryEntity> links =
+                userRepositoryJpaRepository.findByUserIdAndRepositoryIdIn(user.getId(), repoIds);
+        links.forEach(UserRepositoryEntity::deactivate);
     }
 }

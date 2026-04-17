@@ -2,6 +2,7 @@ package com.md_blog.demo.repo.controller;
 
 import com.md_blog.demo.repo.dto.ConnectReposRequest;
 import com.md_blog.demo.repo.dto.ConnectedRepoResponse;
+import com.md_blog.demo.repo.dto.DisconnectReposRequest;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
 import com.md_blog.demo.repo.service.GithubApiService;
 import com.md_blog.demo.repo.service.RepoConnectService;
@@ -47,6 +48,18 @@ public class RepoController {
             return ResponseEntity.status(401).build();
         }
         repoConnectService.connectRepos(user, request.repos());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/disconnect")
+    public ResponseEntity<Void> disconnectRepos(
+            @AuthenticationPrincipal User user,
+            @RequestBody DisconnectReposRequest request
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        repoConnectService.disconnectRepos(user, request.githubRepoIds());
         return ResponseEntity.ok().build();
     }
 }

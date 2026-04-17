@@ -50,3 +50,15 @@ export async function connectRepos(token: string, repos: GithubRepo[]): Promise<
   });
   if (!res.ok) throw new Error("Failed to connect repos");
 }
+
+export async function disconnectRepos(token: string, githubRepoIds: number[]): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/repos/disconnect`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ githubRepoIds }),
+  });
+  if (!res.ok) throw new Error("Failed to disconnect repos");
+}

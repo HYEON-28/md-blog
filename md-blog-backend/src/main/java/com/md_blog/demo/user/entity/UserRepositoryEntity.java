@@ -30,4 +30,12 @@ public class UserRepositoryEntity {
 
     @Column(name = "active", nullable = false)
     private boolean active;
+
+    public void activate() {
+        this.active = true;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
 }

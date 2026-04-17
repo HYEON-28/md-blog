@@ -5,6 +5,7 @@ import RepoLink from "./pages/RepoLink";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Main from "./pages/Main";
+import RepoSettings from "./pages/RepoSettings";
 
 function App() {
   const { isLoggedIn, isLoading } = useAuth();
@@ -25,6 +26,7 @@ function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/repolink" element={<RepoLink />} />
       <Route path="/main" element={<Main />} />
+      <Route path="/repoSettings" element={<RepoSettings />} />
     </Routes>
   );
 }
