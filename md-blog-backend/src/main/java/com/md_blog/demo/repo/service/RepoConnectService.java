@@ -1,5 +1,6 @@
 package com.md_blog.demo.repo.service;
 
+import com.md_blog.demo.blog.repository.BlogRepositoryJpaRepository;
 import com.md_blog.demo.repo.dto.ConnectedRepoResponse;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
 import com.md_blog.demo.repo.entity.RepositoryEntity;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +26,7 @@ public class RepoConnectService {
 
     private final RepositoryJpaRepository repositoryJpaRepository;
     private final UserRepositoryJpaRepository userRepositoryJpaRepository;
+    private final BlogRepositoryJpaRepository blogRepositoryJpaRepository;
     private final GithubApiService githubApiService;
 
     @Transactional(readOnly = true)
@@ -49,6 +52,21 @@ public class RepoConnectService {
                         GithubRepoDto.GithubApiResponse::pushedAt
                 ));
 
+        // 블로그로 지정된 user_repository_id 집합
+        Set<UUID> blogUserRepoIds = blogRepositoryJpaRepository
+                .findByUserIdAndActiveTrue(user.getId()).stream()
+                .map(b -> b.getUserRepositoryId())
+                .collect(Collectors.toSet());
+
+        // user_repositories id → repository id 역방향 맵
+        Map<UUID, UUID> repoIdByUserRepoId = links.stream()
+                .collect(Collectors.toMap(UserRepositoryEntity::getId, UserRepositoryEntity::getRepositoryId));
+
+        Set<UUID> blogRepoEntityIds = blogUserRepoIds.stream()
+                .map(repoIdByUserRepoId::get)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
         return repos.stream()
                 .map(r -> new ConnectedRepoResponse(
                         r.getGithubRepoId(),
@@ -56,7 +74,8 @@ public class RepoConnectService {
                         r.getDescription(),
                         r.getLanguage(),
                         r.getHtmlUrl(),
-                        pushedAtMap.getOrDefault(r.getGithubRepoId(), "")
+                        pushedAtMap.getOrDefault(r.getGithubRepoId(), ""),
+                        blogRepoEntityIds.contains(r.getId())
                 ))
                 .toList();
     }

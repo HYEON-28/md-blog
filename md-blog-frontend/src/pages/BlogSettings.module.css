@@ -1,0 +1,408 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid #21262d;
+  background: #0d1117;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.navLogo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.navLogoMark {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #58a6ff, #3fb950);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0d1117;
+}
+.navLogoText {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6edf3;
+  letter-spacing: -0.01em;
+}
+.navAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #388bfd, #3fb950);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 36px 24px 60px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.breadcrumb a {
+  font-size: 13px;
+  color: #8b949e;
+  text-decoration: none;
+}
+.breadcrumb a:hover {
+  color: #58a6ff;
+}
+.breadcrumbSep {
+  color: #484f58;
+  font-size: 13px;
+}
+.breadcrumbCurrent {
+  font-size: 13px;
+  color: #e6edf3;
+}
+
+.pageHeader {
+  margin-bottom: 28px;
+}
+.pageTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e6edf3;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.pageDesc {
+  font-size: 13px;
+  color: #8b949e;
+  line-height: 1.6;
+}
+
+.sectionCard {
+  border: 1px solid #21262d;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+}
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cardIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.iconAll {
+  background: rgba(56, 139, 253, 0.15);
+}
+.iconBlog {
+  background: rgba(163, 113, 247, 0.15);
+}
+.cardTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e6edf3;
+}
+.cardCount {
+  font-size: 11px;
+  color: #8b949e;
+  background: #21262d;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.cardToolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: #0d1117;
+  border-bottom: 1px solid #161b22;
+  flex-wrap: wrap;
+}
+.searchWrap {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+}
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  color: #8b949e;
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  height: 32px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  padding: 0 10px 0 30px;
+  font-size: 12px;
+  color: #e6edf3;
+  font-family: "Pretendard", sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.searchInput::placeholder {
+  color: #484f58;
+}
+.searchInput:focus {
+  border-color: #a371f7;
+}
+.langFilter {
+  height: 32px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #c9d1d9;
+  font-family: "Pretendard", sans-serif;
+  outline: none;
+  cursor: pointer;
+  min-width: 100px;
+}
+.langFilter:focus {
+  border-color: #a371f7;
+}
+
+.selectAllRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 18px;
+  background: #0f1318;
+  border-bottom: 1px solid #161b22;
+}
+.selectAllLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.selectAllLeft label {
+  font-size: 12px;
+  color: #8b949e;
+  cursor: pointer;
+}
+.selInfo {
+  font-size: 12px;
+  color: #8b949e;
+}
+.selInfoCountBlue {
+  color: #58a6ff;
+  font-family: "JetBrains Mono", monospace;
+}
+.selInfoCountPurple {
+  color: #a371f7;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.repoRows {
+  background: #0d1117;
+}
+.repoRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid #161b22;
+  transition: background 0.1s;
+  cursor: pointer;
+}
+.repoRow:first-child {
+  border-top: none;
+}
+.repoRow:hover {
+  background: #161b22;
+}
+.repoCheck {
+  width: 15px;
+  height: 15px;
+  accent-color: #a371f7;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.repoDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.repoInfo {
+  flex: 1;
+  min-width: 0;
+}
+.repoName {
+  font-size: 13px;
+  font-weight: 500;
+  color: #58a6ff;
+  font-family: "JetBrains Mono", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.repoNameBlog {
+  color: #a371f7;
+}
+.repoDesc {
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.repoRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.tagLang {
+  color: #8b949e;
+  border-color: #30363d;
+}
+.tagLinked {
+  color: #3fb950;
+  border-color: rgba(63, 185, 80, 0.3);
+  background: rgba(63, 185, 80, 0.08);
+}
+.tagBlog {
+  color: #a371f7;
+  border-color: rgba(163, 113, 247, 0.3);
+  background: rgba(163, 113, 247, 0.08);
+}
+.repoDate {
+  font-size: 11px;
+  color: #484f58;
+  font-family: "JetBrains Mono", monospace;
+}
+.mdBadge {
+  font-size: 11px;
+  color: #8b949e;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #0f1318;
+  border-top: 1px solid #21262d;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.actionBarInfo {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.btnAddBlog {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 18px;
+  background: #6e40c9;
+  border: 1px solid #a371f7;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  font-family: "Pretendard", sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnAddBlog:hover {
+  background: #8250df;
+}
+.btnAddBlog:disabled {
+  background: #1c2128;
+  border-color: #30363d;
+  color: #4d5566;
+  cursor: not-allowed;
+}
+
+.btnRemoveBlog {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 18px;
+  background: #21262d;
+  border: 1px solid #a371f7;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a371f7;
+  font-family: "Pretendard", sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnRemoveBlog:hover {
+  background: rgba(163, 113, 247, 0.1);
+}
+.btnRemoveBlog:disabled {
+  background: #1c2128;
+  border-color: #30363d;
+  color: #4d5566;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .main {
+    padding: 24px 14px 60px;
+  }
+  .repoRight {
+    display: none;
+  }
+  .cardToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

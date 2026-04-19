@@ -6,6 +6,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Main from "./pages/Main";
 import RepoSettings from "./pages/RepoSettings";
+import BlogSettings from "./pages/BlogSettings";
 
 function App() {
   const { isLoggedIn, isLoading } = useAuth();
@@ -27,6 +28,7 @@ function App() {
       <Route path="/repolink" element={<RepoLink />} />
       <Route path="/main" element={<Main />} />
       <Route path="/repoSettings" element={<RepoSettings />} />
+      <Route path="/blogSettings" element={<BlogSettings />} />
     </Routes>
   );
 }

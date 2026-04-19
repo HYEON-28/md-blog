@@ -1,9 +1,11 @@
 package com.md_blog.demo.repo.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Set;
@@ -47,5 +49,63 @@ public class GithubApiService {
         return response.stream()
                 .filter(r -> githubRepoIds.contains(r.id()))
                 .toList();
+    }
+
+    /** 오늘 00:00 UTC 이후 커밋 목록 (최대 20개) */
+    public List<CommitSummary> getTodayCommits(String accessToken, String fullName, String since) {
+        String uri = UriComponentsBuilder
+                .fromPath("/repos/{fullName}/commits")
+                .queryParam("since", since)
+                .queryParam("per_page", 20)
+                .buildAndExpand(fullName)
+                .toUriString();
+
+        List<CommitSummary> result = restClient.get()
+                .uri(uri)
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+
+        return result != null ? result : List.of();
+    }
+
+    /** 특정 커밋의 파일 변경 상세 */
+    public CommitDetail getCommitDetail(String accessToken, String fullName, String sha) {
+        return restClient.get()
+                .uri("/repos/{fullName}/commits/{sha}", fullName, sha)
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(CommitDetail.class);
+    }
+
+    // ── GitHub API 응답 모델 ──────────────────────────────────────────────────
+
+    public record CommitSummary(
+            String sha,
+            CommitInfo commit
+    ) {
+        public record CommitInfo(
+                String message,
+                Author author
+        ) {}
+        public record Author(String date) {}
+    }
+
+    public record CommitDetail(
+            String sha,
+            CommitInfo commit,
+            List<FileChange> files
+    ) {
+        public record CommitInfo(
+                String message,
+                Author author
+        ) {}
+        public record Author(String date) {}
+        public record FileChange(
+                String filename,
+                String status,
+                int additions,
+                int deletions
+        ) {}
     }
 }

@@ -4,8 +4,10 @@ import com.md_blog.demo.repo.dto.ConnectReposRequest;
 import com.md_blog.demo.repo.dto.ConnectedRepoResponse;
 import com.md_blog.demo.repo.dto.DisconnectReposRequest;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
+import com.md_blog.demo.repo.dto.TodayUpdateResponse;
 import com.md_blog.demo.repo.service.GithubApiService;
 import com.md_blog.demo.repo.service.RepoConnectService;
+import com.md_blog.demo.repo.service.TodayUpdateService;
 import com.md_blog.demo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ public class RepoController {
 
     private final GithubApiService githubApiService;
     private final RepoConnectService repoConnectService;
+    private final TodayUpdateService todayUpdateService;
 
     @GetMapping("/connected")
     public ResponseEntity<List<ConnectedRepoResponse>> getConnectedRepos(@AuthenticationPrincipal User user) {
@@ -61,5 +64,13 @@ public class RepoController {
         }
         repoConnectService.disconnectRepos(user, request.githubRepoIds());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/today-updates")
+    public ResponseEntity<List<TodayUpdateResponse>> getTodayUpdates(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(todayUpdateService.getTodayUpdates(user));
     }
 }
