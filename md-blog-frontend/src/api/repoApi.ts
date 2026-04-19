@@ -99,10 +99,29 @@ export interface TodayFileChange {
 
 export interface TodayUpdateRepo {
   repoName: string;
+  repoFullName: string;
   language: string | null;
   totalAdd: number;
   totalDel: number;
   files: TodayFileChange[];
+}
+
+export interface FileDetailCommit {
+  sha: string;
+  message: string;
+  time: string;
+  additions: number;
+  deletions: number;
+  patch: string | null;
+  latest: boolean;
+}
+
+export interface FileDetail {
+  filePath: string;
+  repoFullName: string;
+  totalAdd: number;
+  totalDel: number;
+  commits: FileDetailCommit[];
 }
 
 export async function getTodayUpdates(token: string): Promise<TodayUpdateRepo[]> {
@@ -110,5 +129,18 @@ export async function getTodayUpdates(token: string): Promise<TodayUpdateRepo[]>
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch today updates");
+  return res.json();
+}
+
+export async function getFileDetail(
+  token: string,
+  repoFullName: string,
+  filePath: string
+): Promise<FileDetail> {
+  const params = new URLSearchParams({ repoFullName, filePath });
+  const res = await fetch(`${BASE_URL}/api/repos/file-detail?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch file detail");
   return res.json();
 }

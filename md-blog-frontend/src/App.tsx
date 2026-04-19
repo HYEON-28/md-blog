@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Main from "./pages/Main";
 import RepoSettings from "./pages/RepoSettings";
 import BlogSettings from "./pages/BlogSettings";
+import FileUpdated from "./pages/FileUpdated";
 
 function App() {
   const { isLoggedIn, isLoading } = useAuth();
@@ -29,6 +30,7 @@ function App() {
       <Route path="/main" element={<Main />} />
       <Route path="/repoSettings" element={<RepoSettings />} />
       <Route path="/blogSettings" element={<BlogSettings />} />
+      <Route path="/file-updated" element={<FileUpdated />} />
     </Routes>
   );
 }

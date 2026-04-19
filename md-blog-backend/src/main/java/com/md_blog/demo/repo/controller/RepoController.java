@@ -3,6 +3,7 @@ package com.md_blog.demo.repo.controller;
 import com.md_blog.demo.repo.dto.ConnectReposRequest;
 import com.md_blog.demo.repo.dto.ConnectedRepoResponse;
 import com.md_blog.demo.repo.dto.DisconnectReposRequest;
+import com.md_blog.demo.repo.dto.FileDetailResponse;
 import com.md_blog.demo.repo.dto.GithubRepoDto;
 import com.md_blog.demo.repo.dto.TodayUpdateResponse;
 import com.md_blog.demo.repo.service.GithubApiService;
@@ -72,5 +73,17 @@ public class RepoController {
             return ResponseEntity.status(401).build();
         }
         return ResponseEntity.ok(todayUpdateService.getTodayUpdates(user));
+    }
+
+    @GetMapping("/file-detail")
+    public ResponseEntity<FileDetailResponse> getFileDetail(
+            @AuthenticationPrincipal User user,
+            @RequestParam String repoFullName,
+            @RequestParam String filePath
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(todayUpdateService.getFileDetail(user, repoFullName, filePath));
     }
 }

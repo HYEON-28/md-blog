@@ -4,6 +4,7 @@ import java.util.List;
 
 public record TodayUpdateResponse(
         String repoName,
+        String repoFullName,
         String language,
         int totalAdd,
         int totalDel,

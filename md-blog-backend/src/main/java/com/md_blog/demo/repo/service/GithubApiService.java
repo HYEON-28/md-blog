@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClient;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -66,6 +68,22 @@ public class GithubApiService {
         }
     }
 
+    /** 특정 파일을 건드린 오늘 커밋 목록 */
+    public List<CommitSummary> getFileCommits(String accessToken, String fullName, String since, String filePath) {
+        String encodedPath = URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+        String uri = "/repos/" + fullName + "/commits?since=" + since + "&path=" + encodedPath + "&per_page=20";
+        try {
+            List<CommitSummary> result = restClient.get()
+                    .uri(uri)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
+            return result != null ? result : List.of();
+        } catch (RestClientException e) {
+            return List.of();
+        }
+    }
+
     /** 특정 커밋의 파일 변경 상세 */
     public CommitDetail getCommitDetail(String accessToken, String fullName, String sha) {
         String uri = "/repos/" + fullName + "/commits/" + sha;
@@ -107,7 +125,8 @@ public class GithubApiService {
                 String filename,
                 String status,
                 int additions,
-                int deletions
+                int deletions,
+                String patch
         ) {}
     }
 }

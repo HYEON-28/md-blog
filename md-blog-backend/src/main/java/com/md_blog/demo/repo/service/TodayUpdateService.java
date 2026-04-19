@@ -1,5 +1,6 @@
 package com.md_blog.demo.repo.service;
 
+import com.md_blog.demo.repo.dto.FileDetailResponse;
 import com.md_blog.demo.repo.dto.TodayUpdateResponse;
 import com.md_blog.demo.repo.entity.RepositoryEntity;
 import com.md_blog.demo.repo.repository.RepositoryJpaRepository;
@@ -10,8 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,10 +28,7 @@ public class TodayUpdateService {
     private final RepositoryJpaRepository repositoryJpaRepository;
 
     public List<TodayUpdateResponse> getTodayUpdates(User user) {
-        // 오늘 00:00 UTC (ISO 8601)
-        String since = LocalDate.now(ZoneOffset.UTC)
-                .atStartOfDay(ZoneOffset.UTC)
-                .format(DateTimeFormatter.ISO_INSTANT);
+        String since = todaySeoulMidnightUtc();
 
         List<UserRepositoryEntity> links =
                 userRepositoryJpaRepository.findByUserIdAndActiveTrue(user.getId());
@@ -50,7 +49,6 @@ public class TodayUpdateService {
             if (commits.isEmpty()) continue;
 
             // 파일별 집계: 가장 최근 커밋 기준으로 상태·메시지·시각, additions/deletions 합산
-            // commits는 newest-first 순서로 반환됨
             Map<String, FileAgg> fileMap = new LinkedHashMap<>();
 
             for (GithubApiService.CommitSummary summary : commits) {
@@ -68,7 +66,7 @@ public class TodayUpdateService {
                             new FileAgg(fc.filename(), fc.status(), commitMsg, fc.additions(), fc.deletions(), commitTime),
                             (existing, incoming) -> new FileAgg(
                                     existing.filename(),
-                                    existing.status(),       // 가장 최근(first) 상태 유지
+                                    existing.status(),
                                     existing.commitMessage(),
                                     existing.additions() + incoming.additions(),
                                     existing.deletions() + incoming.deletions(),
@@ -94,10 +92,62 @@ public class TodayUpdateService {
                     ))
                     .toList();
 
-            result.add(new TodayUpdateResponse(repo.getName(), repo.getLanguage(), totalAdd, totalDel, files));
+            result.add(new TodayUpdateResponse(repo.getName(), repo.getFullName(), repo.getLanguage(), totalAdd, totalDel, files));
         }
 
         return result;
+    }
+
+    public FileDetailResponse getFileDetail(User user, String repoFullName, String filePath) {
+        String since = todaySeoulMidnightUtc();
+
+        List<GithubApiService.CommitSummary> commits =
+                githubApiService.getFileCommits(user.getAccessToken(), repoFullName, since, filePath);
+
+        if (commits.isEmpty()) {
+            return new FileDetailResponse(filePath, repoFullName, 0, 0, List.of());
+        }
+
+        List<FileDetailResponse.CommitWithPatch> result = new ArrayList<>();
+        int totalAdd = 0, totalDel = 0;
+
+        for (int i = 0; i < commits.size(); i++) {
+            GithubApiService.CommitSummary summary = commits.get(i);
+            GithubApiService.CommitDetail detail =
+                    githubApiService.getCommitDetail(user.getAccessToken(), repoFullName, summary.sha());
+
+            if (detail == null || detail.files() == null) continue;
+
+            GithubApiService.CommitDetail.FileChange fc = detail.files().stream()
+                    .filter(f -> f.filename().equals(filePath))
+                    .findFirst()
+                    .orElse(null);
+
+            if (fc == null) continue;
+
+            totalAdd += fc.additions();
+            totalDel += fc.deletions();
+
+            result.add(new FileDetailResponse.CommitWithPatch(
+                    summary.sha(),
+                    firstLine(summary.commit().message()),
+                    toHhmm(summary.commit().author().date()),
+                    fc.additions(),
+                    fc.deletions(),
+                    fc.patch(),
+                    i == 0
+            ));
+        }
+
+        return new FileDetailResponse(filePath, repoFullName, totalAdd, totalDel, result);
+    }
+
+    private static String todaySeoulMidnightUtc() {
+        ZoneId seoul = ZoneId.of("Asia/Seoul");
+        return LocalDate.now(seoul)
+                .atStartOfDay(seoul)
+                .toInstant()
+                .toString();
     }
 
     private record FileAgg(
@@ -113,7 +163,7 @@ public class TodayUpdateService {
         return switch (status) {
             case "added" -> "added";
             case "removed" -> "deleted";
-            default -> "modified";  // modified, renamed, copied, changed
+            default -> "modified";
         };
     }
 
@@ -124,8 +174,9 @@ public class TodayUpdateService {
     }
 
     private static String toHhmm(String isoDate) {
-        if (isoDate == null || isoDate.length() < 16) return "";
-        // "2026-04-19T09:14:00Z" → "09:14"
-        return isoDate.substring(11, 16);
+        if (isoDate == null || isoDate.isEmpty()) return "";
+        return Instant.parse(isoDate)
+                .atZone(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 }

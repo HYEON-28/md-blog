@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>파일 변경 내역 — GitXpert</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Pretendard:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { min-height: 100vh; background: #0d1117; color: #e6edf3; font-family: 'Pretendard', sans-serif; }
+
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; border-bottom: 1px solid #21262d; background: #0d1117; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-mark { width: 28px; height: 28px; background: linear-gradient(135deg, #58a6ff, #3fb950); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: #0d1117; }
+    .nav-logo-text { font-size: 15px; font-weight: 600; color: #e6edf3; letter-spacing: -0.01em; }
+    .nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #388bfd, #3fb950); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+
+    .main { max-width: 960px; margin: 0 auto; padding: 32px 24px 60px; }
+
+    .breadcrumb { display: flex; align-items: center; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .breadcrumb a { font-size: 12px; color: #8b949e; text-decoration: none; }
+    .breadcrumb a:hover { color: #58a6ff; }
+    .breadcrumb-sep { color: #484f58; font-size: 12px; }
+    .breadcrumb-cur { font-size: 12px; color: #e6edf3; font-family: 'JetBrains Mono', monospace; }
+
+    .page-header { margin-bottom: 20px; }
+    .file-path-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .change-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 1px solid; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .badge-modified { color: #58a6ff; border-color: rgba(88,166,255,0.3); background: rgba(88,166,255,0.08); }
+    .badge-added { color: #3fb950; border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.08); }
+    .badge-deleted { color: #f85149; border-color: rgba(248,81,73,0.3); background: rgba(248,81,73,0.08); }
+    .file-full-path { font-size: 16px; font-weight: 500; color: #e6edf3; font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+    .meta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .meta-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #8b949e; }
+    .diff-add { color: #3fb950; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .diff-del { color: #f85149; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* TIMELINE */
+    .timeline-label { font-size: 11px; color: #484f58; font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; letter-spacing: 0.04em; }
+    .timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 20px; border: 1px solid #21262d; border-radius: 10px; overflow: hidden; }
+    .timeline-item { display: flex; align-items: flex-start; gap: 14px; padding: 13px 16px; background: #0d1117; border-bottom: 1px solid #161b22; cursor: pointer; transition: background 0.1s; }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-item:hover { background: #161b22; }
+    .timeline-item.active { background: rgba(88,166,255,0.05); border-left: 2px solid #58a6ff; }
+    .timeline-item.active .tl-index { color: #58a6ff; border-color: rgba(88,166,255,0.4); background: rgba(88,166,255,0.1); }
+    .tl-left { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; padding-top: 2px; }
+    .tl-index { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #30363d; background: #161b22; display: flex; align-items: center; justify-content: center; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #8b949e; flex-shrink: 0; }
+    .tl-line { width: 1px; background: #21262d; flex: 1; min-height: 12px; }
+    .timeline-item:last-child .tl-line { display: none; }
+    .tl-body { flex: 1; min-width: 0; }
+    .tl-msg { font-size: 13px; font-weight: 500; color: #e6edf3; margin-bottom: 5px; line-height: 1.4; }
+    .tl-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .tl-hash { font-size: 11px; color: #58a6ff; font-family: 'JetBrains Mono', monospace; }
+    .tl-time { font-size: 11px; color: #484f58; font-family: 'JetBrains Mono', monospace; }
+    .tl-stat { display: flex; align-items: center; gap: 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+    .tl-tag { font-size: 10px; padding: 1px 7px; border-radius: 20px; border: 1px solid; color: #d29922; border-color: rgba(210,153,34,0.3); background: rgba(210,153,34,0.08); }
+    .tl-right { flex-shrink: 0; display: flex; align-items: center; }
+    .tl-chevron { width: 14px; height: 14px; color: #484f58; }
+
+    /* DIFF */
+    .diff-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .diff-section-title { font-size: 13px; font-weight: 500; color: #e6edf3; }
+    .diff-section-meta { display: flex; align-items: center; gap: 10px; }
+    .view-toggle { display: flex; border: 1px solid #30363d; border-radius: 7px; overflow: hidden; }
+    .view-btn { height: 28px; padding: 0 11px; background: #161b22; border: none; font-size: 12px; color: #8b949e; font-family: 'Pretendard', sans-serif; cursor: pointer; transition: background 0.1s, color 0.1s; }
+    .view-btn.active { background: #21262d; color: #e6edf3; }
+    .view-btn:hover:not(.active) { color: #c9d1d9; }
+    .gh-link { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; background: #21262d; border: 1px solid #444c56; border-radius: 7px; font-size: 12px; color: #c9d1d9; text-decoration: none; transition: background 0.15s; }
+    .gh-link:hover { background: #2d333b; }
+
+    .diff-wrap { border: 1px solid #21262d; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+    .diff-file-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #161b22; border-bottom: 1px solid #21262d; }
+    .diff-file-name { font-size: 12px; color: #8b949e; font-family: 'JetBrains Mono', monospace; }
+    .diff-stat { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+    .diff-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+    .diff-table td { padding: 1px 0; white-space: pre; vertical-align: top; }
+    .diff-table tr:hover td { filter: brightness(1.15); }
+    .ln { width: 48px; min-width: 48px; text-align: right; padding: 0 10px 0 6px; color: #484f58; background: #0d1117; user-select: none; border-right: 1px solid #21262d; }
+    .code-cell { padding: 0 16px; width: 100%; }
+    .line-add { background: #0f2a1a; }
+    .line-add .ln { background: #0a1f13; color: #3fb950; }
+    .line-add .code-cell { color: #aff5b4; }
+    .line-add .code-cell .sym { color: #3fb950; }
+    .line-del { background: #2a0f0f; }
+    .line-del .ln { background: #1f0a0a; color: #f85149; }
+    .line-del .code-cell { color: #ffc0bc; }
+    .line-del .code-cell .sym { color: #f85149; }
+    .line-ctx .ln { color: #484f58; }
+    .line-ctx .code-cell { color: #8b949e; }
+    .hunk-header td { background: #0d1926; color: #8b949e; padding: 4px 12px; font-size: 11px; border-top: 1px solid #21262d; border-bottom: 1px solid #21262d; }
+
+    /* COMMIT MSG */
+    .commit-section { border: 1px solid #21262d; border-radius: 10px; overflow: hidden; }
+    .commit-header { padding: 13px 18px; background: #161b22; border-bottom: 1px solid #21262d; }
+    .commit-title { font-size: 13px; font-weight: 500; color: #e6edf3; margin-bottom: 4px; }
+    .commit-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .commit-hash-link { font-size: 11px; color: #58a6ff; font-family: 'JetBrains Mono', monospace; }
+    .commit-body { padding: 14px 18px; font-size: 13px; color: #c9d1d9; line-height: 1.7; }
+    .commit-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #21262d; padding: 1px 5px; border-radius: 4px; }
+    .commit-body pre { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8b949e; background: #161b22; border: 1px solid #21262d; border-radius: 7px; padding: 12px 14px; margin-top: 10px; overflow-x: auto; white-space: pre-wrap; }
+
+    @media (max-width: 640px) {
+      .main { padding: 20px 14px 60px; }
+      .tl-meta { gap: 8px; }
+      .diff-section-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-mark">gx</div>
+      <span class="nav-logo-text">GitXpert</span>
+    </a>
+    <div class="nav-avatar">KD</div>
+  </nav>
+
+  <main class="main">
+
+    <div class="breadcrumb">
+      <a href="#">대시보드</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#">오늘의 업데이트</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#">design-system</a>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-cur">components/Button.tsx</span>
+    </div>
+
+    <div class="page-header">
+      <div class="file-path-row">
+        <span class="change-badge badge-modified">
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="5" r="4"/></svg>
+          modified
+        </span>
+        <span class="file-full-path">components/Button.tsx</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9z"/></svg>
+          design-system
+        </span>
+        <span class="meta-item">오늘 커밋 <strong style="color:#e6edf3;font-weight:500;" id="commit-total">3</strong>개</span>
+        <span class="meta-item">총 <span class="diff-add" id="total-add">+89</span>&nbsp;<span style="color:#484f58">/</span>&nbsp;<span class="diff-del" id="total-del">−14</span></span>
+      </div>
+    </div>
+
+    <div class="timeline-label">오늘 커밋 타임라인 — 클릭하면 해당 diff를 확인할 수 있습니다</div>
+    <div class="timeline" id="timeline"></div>
+
+    <div class="diff-section-header">
+      <div class="diff-section-title" id="diff-title"></div>
+      <div class="diff-section-meta">
+        <div class="view-toggle">
+          <button class="view-btn active" onclick="setView('split',this)">Split</button>
+          <button class="view-btn" onclick="setView('unified',this)">Unified</button>
+        </div>
+        <a class="gh-link" href="#">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub에서 보기
+        </a>
+      </div>
+    </div>
+
+    <div class="diff-wrap">
+      <div class="diff-file-header">
+        <span class="diff-file-name">components/Button.tsx</span>
+        <div class="diff-stat" id="diff-stat"></div>
+      </div>
+      <div id="diff-content"></div>
+    </div>
+
+    <div class="commit-section">
+      <div class="commit-header">
+        <div class="commit-title" id="cm-title"></div>
+        <div class="commit-meta">
+          <span class="commit-hash-link" id="cm-hash"></span>
+          <span class="meta-item" id="cm-time"></span>
+          <span class="meta-item">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 3.5a2 2 0 100 4 2 2 0 000-4zM2 5.5a3.5 3.5 0 115.898 2.549 5.507 5.507 0 013.034 4.084.75.75 0 11-1.482.235 4.001 4.001 0 00-7.9 0 .75.75 0 01-1.482-.236A5.507 5.507 0 013.102 8.05 3.49 3.49 0 012 5.5z"/></svg>
+            kim-dev
+          </span>
+        </div>
+      </div>
+      <div class="commit-body" id="cm-body"></div>
+    </div>
+
+  </main>
+
+  <script>
+    const COMMITS = [
+      {
+        hash: 'a3f9b12', time: '09:14', msg: 'feat: variant prop에 ghost 타입 추가',
+        add: 42, del: 3,
+        body: '기존 <code>primary</code> / <code>secondary</code> variant에 <code>ghost</code> 타입을 추가했습니다.',
+        diff: [
+          { type: 'hunk', content: '@@ -4,1 +4,1 @@' },
+          { type: 'del',  old: 4,        content: "type Variant = 'primary' | 'secondary';" },
+          { type: 'add',         new: 4,  content: "type Variant = 'primary' | 'secondary' | 'ghost';" },
+          { type: 'ctx',  old: 5, new: 5, content: '' },
+          { type: 'hunk', content: '@@ -21,1 +21,14 @@' },
+          { type: 'del',  old: 21,        content: "    disabled ? styles.disabled : ''," },
+          { type: 'add',         new: 21, content: "    disabled ? styles.disabled : undefined," },
+          { type: 'ctx',  old: 22, new: 22, content: "  ].filter(Boolean).join(' ');" },
+          { type: 'ctx',  old: 23, new: 23, content: '' },
+          { type: 'add',         new: 24, content: "  if (variant === 'ghost') {" },
+          { type: 'add',         new: 25, content: '    return (' },
+          { type: 'add',         new: 26, content: '      <button className={`${styles.btn} ${styles.btn_ghost}`}' },
+          { type: 'add',         new: 27, content: '        disabled={disabled} onClick={onClick} {...rest}' },
+          { type: 'add',         new: 28, content: '      >' },
+          { type: 'add',         new: 29, content: '        {children}' },
+          { type: 'add',         new: 30, content: '      </button>' },
+          { type: 'add',         new: 31, content: '    );' },
+          { type: 'add',         new: 32, content: '  }' },
+        ]
+      },
+      {
+        hash: 'c71e4d9', time: '13:02', msg: 'fix: ghost variant 포커스 링 스타일 누락 수정',
+        add: 8, del: 2,
+        body: 'ghost variant에서 키보드 포커스 시 링이 보이지 않는 접근성 버그를 수정했습니다.',
+        diff: [
+          { type: 'hunk', content: '@@ -28,4 +28,6 @@' },
+          { type: 'ctx',  old: 28, new: 28, content: '      <button' },
+          { type: 'ctx',  old: 29, new: 29, content: '        className={`${styles.btn} ${styles.btn_ghost}`}' },
+          { type: 'del',  old: 30,          content: '        disabled={disabled} onClick={onClick}' },
+          { type: 'del',  old: 31,          content: '        {...rest}' },
+          { type: 'add',          new: 30,  content: '        disabled={disabled}' },
+          { type: 'add',          new: 31,  content: '        onClick={onClick}' },
+          { type: 'add',          new: 32,  content: '        aria-disabled={disabled}' },
+          { type: 'add',          new: 33,  content: '        data-focus-visible={undefined}' },
+          { type: 'add',          new: 34,  content: '        {...rest}' },
+          { type: 'ctx',  old: 32, new: 35, content: '      >' },
+        ]
+      },
+      {
+        hash: 'f08a23c', time: '16:45', msg: 'refactor: Button 공통 렌더 로직 헬퍼 함수로 추출',
+        add: 39, del: 9, tag: 'latest',
+        body: 'variant별 분기 렌더를 <code>renderButton()</code> 헬퍼로 추출해 중복 코드를 제거했습니다.',
+        diff: [
+          { type: 'hunk', content: '@@ -18,20 +18,12 @@' },
+          { type: 'del',  old: 18,          content: '  const cls = [' },
+          { type: 'del',  old: 19,          content: '    styles.btn,' },
+          { type: 'del',  old: 20,          content: '    styles[`btn_${variant}`],' },
+          { type: 'del',  old: 21,          content: '    disabled ? styles.disabled : undefined,' },
+          { type: 'del',  old: 22,          content: "  ].filter(Boolean).join(' ');" },
+          { type: 'add',          new: 18,  content: '  const cls = buildClassName(variant, disabled);' },
+          { type: 'ctx',  old: 23, new: 19, content: '' },
+          { type: 'del',  old: 24,          content: "  if (variant === 'ghost') {" },
+          { type: 'del',  old: 25,          content: '    return (' },
+          { type: 'del',  old: 26,          content: '      <button className={`${styles.btn} ${styles.btn_ghost}`}' },
+          { type: 'del',  old: 27,          content: '        disabled={disabled} onClick={onClick} {...rest}' },
+          { type: 'del',  old: 28,          content: '      >{children}</button>' },
+          { type: 'del',  old: 29,          content: '    );' },
+          { type: 'del',  old: 30,          content: '  }' },
+          { type: 'ctx',  old: 31, new: 20, content: '' },
+          { type: 'add',          new: 21,  content: '  return renderButton({ cls, disabled, onClick, children, rest });' },
+        ]
+      },
+    ];
+
+    let selectedIdx = 0;
+    let viewMode = 'split';
+
+    function escape(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderTimeline() {
+      document.getElementById('timeline').innerHTML = COMMITS.map((c, i) => `
+        <div class="timeline-item${i === selectedIdx ? ' active' : ''}" onclick="selectCommit(${i})">
+          <div class="tl-left">
+            <div class="tl-index">${i + 1}</div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-body">
+            <div class="tl-msg">${escape(c.msg)}</div>
+            <div class="tl-meta">
+              <span class="tl-hash">${c.hash}</span>
+              <span class="tl-time">${c.time}</span>
+              <div class="tl-stat">
+                <span class="diff-add">+${c.add}</span>
+                <span style="color:#484f58">/</span>
+                <span class="diff-del">−${c.del}</span>
+              </div>
+              ${c.tag ? `<span class="tl-tag">${c.tag}</span>` : ''}
+            </div>
+          </div>
+          <div class="tl-right">
+            <svg class="tl-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDiff() {
+      const c = COMMITS[selectedIdx];
+      document.getElementById('diff-title').textContent = `커밋 ${selectedIdx + 1}/${COMMITS.length} — ${c.hash} · ${c.time}`;
+      document.getElementById('diff-stat').innerHTML = `<span class="diff-add">+${c.add}</span><span style="color:#484f58">/</span><span class="diff-del">−${c.del}</span>`;
+      document.getElementById('cm-title').textContent = c.msg;
+      document.getElementById('cm-hash').textContent = c.hash;
+      document.getElementById('cm-time').innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.75v3.5l2 2"/></svg> Apr 17, 2026 · ${c.time}`;
+      document.getElementById('cm-body').innerHTML = c.body;
+      document.getElementById('diff-content').innerHTML =
+        viewMode === 'split' ? renderSplit(c.diff) : renderUnified(c.diff);
+    }
+
+    function renderUnified(lines) {
+      let h = '<table class="diff-table"><tbody>';
+      lines.forEach(l => {
+        if (l.type === 'hunk') {
+          h += `<tr class="hunk-header"><td colspan="3">${escape(l.content)}</td></tr>`;
+          return;
+        }
+        const cls = l.type === 'add' ? 'line-add' : l.type === 'del' ? 'line-del' : 'line-ctx';
+        const sym = l.type === 'add' ? '<span class="sym">+</span>' : l.type === 'del' ? '<span class="sym">-</span>' : ' ';
+        h += `<tr class="${cls}">
+          <td class="ln ln-old">${l.old ?? ''}</td>
+          <td class="ln ln-new">${l.new ?? ''}</td>
+          <td class="code-cell">${sym} ${escape(l.content)}</td>
+        </tr>`;
+      });
+      return h + '</tbody></table>';
+    }
+
+    function renderSplit(lines) {
+      const L = [], R = [];
+      lines.forEach(l => {
+        if (l.type === 'hunk')      { L.push(l); R.push(null); }
+        else if (l.type === 'ctx')  { L.push(l); R.push(l); }
+        else if (l.type === 'del')  { L.push(l); R.push(null); }
+        else if (l.type === 'add')  { L.push(null); R.push(l); }
+      });
+      const side = (arr, isLeft) => {
+        let h = `<div style="overflow-x:auto;min-width:0;${isLeft ? 'border-right' : 'border-left'}:1px solid #21262d">
+          <table class="diff-table" style="min-width:100%"><tbody>`;
+        arr.forEach(l => {
+          if (!l) { h += `<tr class="line-ctx"><td class="ln"> </td><td class="code-cell"> </td></tr>`; return; }
+          if (l.type === 'hunk') { h += `<tr class="hunk-header"><td colspan="2">${escape(l.content)}</td></tr>`; return; }
+          const cls = l.type === 'add' ? 'line-add' : l.type === 'del' ? 'line-del' : 'line-ctx';
+          const sym = l.type === 'add' ? '<span class="sym">+</span>' : l.type === 'del' ? '<span class="sym">-</span>' : ' ';
+          const ln = isLeft ? (l.old ?? '') : (l.new ?? '');
+          h += `<tr class="${cls}"><td class="ln">${ln}</td><td class="code-cell">${sym} ${escape(l.content)}</td></tr>`;
+        });
+        return h + '</tbody></table></div>';
+      };
+      return `<div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #21262d">${side(L, true)}${side(R, false)}</div>`;
+    }
+
+    function selectCommit(i) {
+      selectedIdx = i;
+      renderTimeline();
+      renderDiff();
+    }
+
+    function setView(mode, btn) {
+      viewMode = mode;
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDiff();
+    }
+
+    const totalAdd = COMMITS.reduce((s, c) => s + c.add, 0);
+    const totalDel = COMMITS.reduce((s, c) => s + c.del, 0);
+    document.getElementById('total-add').textContent = '+' + totalAdd;
+    document.getElementById('total-del').textContent = '−' + totalDel;
+    document.getElementById('commit-total').textContent = COMMITS.length;
+
+    renderTimeline();
+    renderDiff();
+  </script>
+
+</body>
+</html>
