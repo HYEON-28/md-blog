@@ -395,6 +395,7 @@ GitHub Webhook → API Gateway → SQS → Fargate Worker
 
 - IAM: GitHub Actions용 사용자 또는 OIDC Provider + Role (ECR push, ECS update 권한)
 - Route 53: md-blog.org 도메인 구매 또는 Hosted Zone 등록
+  - hosted zone: 도메인 -> AWS 리소스로 라우팅
 
 1단계 — 네트워크 기반
 
