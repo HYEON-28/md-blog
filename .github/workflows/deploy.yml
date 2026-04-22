@@ -4,10 +4,18 @@ name: Deploy to ECR
 on:
   push:
     branches: [main]
+run: |
+  if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+    echo "SECRET IS EMPTY"                                      
+  else        
+    echo "SECRET EXISTS (length: ${#AWS_ACCESS_KEY_ID})"        
+  fi
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latestxw
     steps:
       - uses: actions/checkout@v4
 
