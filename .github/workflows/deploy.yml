@@ -37,6 +37,8 @@ jobs:
           aws ecs describe-task-definition \
             --task-definition md-blog-td \
             --query taskDefinition > task-definition.json
+          jq 'del(.enableFaultInjection)' task-definition.json > task-definition-clean.json
+          mv task-definition-clean.json task-definition.json
 
       - name: Update ECS task definition
         id: task-def
