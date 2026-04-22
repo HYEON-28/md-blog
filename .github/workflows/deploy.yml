@@ -35,7 +35,7 @@ jobs:
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition md-blog-app \
+            --task-definition md-blog-td \
             --query taskDefinition > task-definition.json
 
       - name: Update ECS task definition
@@ -50,6 +50,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: md-blog-service
-          cluster: md-blog-cluster
+          service: md-blog-td-service-7594l5ou
+          cluster: md-blog-cluster2
           wait-for-service-stability: true
