@@ -96,3 +96,11 @@ RDS 인스턴스를 어느 AZ(가용영역)의 어떤 서브넷이 둘지 정의
 
 - intra: fargate 설정
 - task definition: 0.5 vCPU, 1 GM Memory
+
+---
+
+## 프론트엔드
+
+CloudFront + S3구조
+
+- 목적: 비용최소화

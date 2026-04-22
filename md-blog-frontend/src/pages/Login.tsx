@@ -33,7 +33,7 @@ function Login() {
           <button
             className={styles.btnGithub}
             type="button"
-            onClick={() => { window.location.href = "http://localhost:8080/oauth2/authorization/github"; }}
+            onClick={() => { window.location.href = "/oauth2/authorization/github"; }}
           >
             <svg width="18" height="18" viewBox="0 0 98 96" fill="white">
               <path
