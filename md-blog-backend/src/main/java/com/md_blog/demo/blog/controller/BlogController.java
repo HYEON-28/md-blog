@@ -1,5 +1,6 @@
 package com.md_blog.demo.blog.controller;
 
+import com.md_blog.demo.blog.dto.BlogMainResponse;
 import com.md_blog.demo.blog.dto.BlogRepoIdsRequest;
 import com.md_blog.demo.blog.service.BlogService;
 import com.md_blog.demo.user.entity.User;
@@ -16,6 +17,11 @@ import java.util.Set;
 public class BlogController {
 
     private final BlogService blogService;
+
+    @GetMapping("/{username}")
+    public ResponseEntity<BlogMainResponse> getBlogMain(@PathVariable String username) {
+        return ResponseEntity.ok(blogService.getBlogMain(username));
+    }
 
     @GetMapping("/repos")
     public ResponseEntity<Set<Long>> getBlogRepos(@AuthenticationPrincipal User user) {

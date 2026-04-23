@@ -8,9 +8,33 @@ import Main from "./pages/Main";
 import RepoSettings from "./pages/RepoSettings";
 import BlogSettings from "./pages/BlogSettings";
 import FileUpdated from "./pages/FileUpdated";
+import BlogMain from "./pages/BlogMain";
+
+function getBlogUsername(): string | null {
+  const hostname = window.location.hostname;
+  const parts = hostname.split(".");
+  const tld = parts[parts.length - 1];
+
+  // dev: hyeon28.localhost
+  if (tld === "localhost" && parts.length >= 2) {
+    return parts[0];
+  }
+
+  // prod: hyeon28.md-blog.org
+  if (parts.length >= 3 && parts[0] !== "www") {
+    return parts[0];
+  }
+
+  return null;
+}
 
 function App() {
   const { isLoggedIn, isLoading } = useAuth();
+
+  const blogUsername = getBlogUsername();
+  if (blogUsername) {
+    return <BlogMain username={blogUsername} />;
+  }
 
   if (isLoading) {
     return null;
