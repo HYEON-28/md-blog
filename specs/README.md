@@ -16,6 +16,7 @@
 | 오늘의 업데이트 + 파일 diff 뷰어 | [features/today-update.md](features/today-update.md) |
 | 블로그 레포 설정 | [features/blog-settings.md](features/blog-settings.md) |
 | 블로그 메인 (서브도메인 라우팅) | [features/blog-viewer.md](features/blog-viewer.md) |
+| 블로그 메인 (README post 화면) | [features/blog-main.md](features/blog-main.md) |
 | 다국어(i18n) 지원 | [features/i18n.md](features/i18n.md) |
 
 ### 미구현 (기획됨)
