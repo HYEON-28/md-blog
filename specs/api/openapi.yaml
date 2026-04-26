@@ -1,0 +1,427 @@
+openapi: 3.0.3
+info:
+  title: md-blog API
+  version: 1.0.0
+  description: md-blog 백엔드 API 스펙
+
+servers:
+  - url: https://api.md-blog.org
+    description: 운영
+  - url: http://localhost:8080
+    description: 개발
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        githubUsername:
+          type: string
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        githubProfileUrl:
+          type: string
+          nullable: true
+
+    GithubRepo:
+      type: object
+      properties:
+        githubRepoId:
+          type: integer
+          format: int64
+        ownerGithubId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        fullName:
+          type: string
+        description:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        stars:
+          type: integer
+        forks:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+        htmlUrl:
+          type: string
+        defaultBranch:
+          type: string
+
+    ConnectedRepo:
+      type: object
+      properties:
+        githubRepoId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        htmlUrl:
+          type: string
+        pushedAt:
+          type: string
+          format: date-time
+        blog:
+          type: boolean
+
+    TodayFileChange:
+      type: object
+      properties:
+        filePath:
+          type: string
+        changeType:
+          type: string
+          enum: [added, modified, deleted]
+        commitMessage:
+          type: string
+        additions:
+          type: integer
+        deletions:
+          type: integer
+        time:
+          type: string
+          description: HH:mm (서울 기준)
+
+    TodayUpdateRepo:
+      type: object
+      properties:
+        repoName:
+          type: string
+        repoFullName:
+          type: string
+        language:
+          type: string
+          nullable: true
+        totalAdd:
+          type: integer
+        totalDel:
+          type: integer
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodayFileChange'
+
+    FileDetailCommit:
+      type: object
+      properties:
+        sha:
+          type: string
+        message:
+          type: string
+        time:
+          type: string
+          description: HH:mm (서울 기준)
+        additions:
+          type: integer
+        deletions:
+          type: integer
+        patch:
+          type: string
+          nullable: true
+        latest:
+          type: boolean
+
+    FileDetail:
+      type: object
+      properties:
+        filePath:
+          type: string
+        repoFullName:
+          type: string
+        totalAdd:
+          type: integer
+        totalDel:
+          type: integer
+        commits:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileDetailCommit'
+
+    BlogMain:
+      type: object
+      properties:
+        username:
+          type: string
+        name:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+
+paths:
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 현재 로그인 유저 정보
+      responses:
+        '200':
+          description: 유저 정보
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: 인증 실패
+
+  /auth/has-linked-repo:
+    get:
+      tags: [Auth]
+      summary: 연동된 레포 존재 여부
+      responses:
+        '200':
+          description: linked 여부
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  linked:
+                    type: boolean
+        '401':
+          description: 인증 실패
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 로그아웃 (JWT stateless, 클라이언트가 토큰 삭제)
+      responses:
+        '200':
+          description: 성공
+
+  # ── Repos ─────────────────────────────────────────────────────────────────
+
+  /api/repos/public:
+    get:
+      tags: [Repos]
+      summary: GitHub public 레포 목록 (GitHub API 직접 조회)
+      responses:
+        '200':
+          description: 레포 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GithubRepo'
+        '401':
+          description: 인증 실패
+
+  /api/repos/connected:
+    get:
+      tags: [Repos]
+      summary: 연동된 레포 목록
+      responses:
+        '200':
+          description: 연동 레포 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConnectedRepo'
+        '401':
+          description: 인증 실패
+
+  /api/repos/connect:
+    post:
+      tags: [Repos]
+      summary: 레포 연동
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repos:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/GithubRepo'
+      responses:
+        '200':
+          description: 성공
+        '401':
+          description: 인증 실패
+
+  /api/repos/disconnect:
+    post:
+      tags: [Repos]
+      summary: 레포 연동 해제
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                githubRepoIds:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+      responses:
+        '200':
+          description: 성공
+        '401':
+          description: 인증 실패
+
+  /api/repos/today-updates:
+    get:
+      tags: [Repos]
+      summary: 오늘 변경된 파일 목록 (연동 레포 전체)
+      responses:
+        '200':
+          description: 레포별 오늘 업데이트
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TodayUpdateRepo'
+        '401':
+          description: 인증 실패
+
+  /api/repos/file-detail:
+    get:
+      tags: [Repos]
+      summary: 특정 파일의 오늘 커밋 + diff
+      parameters:
+        - name: repoFullName
+          in: query
+          required: true
+          schema:
+            type: string
+          example: hyeon28/my-repo
+        - name: filePath
+          in: query
+          required: true
+          schema:
+            type: string
+          example: src/main.ts
+      responses:
+        '200':
+          description: 파일 커밋 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileDetail'
+        '401':
+          description: 인증 실패
+
+  # ── Blog ──────────────────────────────────────────────────────────────────
+
+  /api/blog/{username}:
+    get:
+      tags: [Blog]
+      summary: 블로그 메인 정보
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 블로그 메인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlogMain'
+        '404':
+          description: 유저 없음
+
+  /api/blog/repos:
+    get:
+      tags: [Blog]
+      summary: 블로그 지정된 레포 ID 목록
+      responses:
+        '200':
+          description: githubRepoId 집합
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+        '401':
+          description: 인증 실패
+
+  /api/blog/repos/add:
+    post:
+      tags: [Blog]
+      summary: 블로그 레포 추가
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                githubRepoIds:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+      responses:
+        '200':
+          description: 성공
+        '401':
+          description: 인증 실패
+
+  /api/blog/repos/remove:
+    post:
+      tags: [Blog]
+      summary: 블로그 레포 제거
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                githubRepoIds:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+      responses:
+        '200':
+          description: 성공
+        '401':
+          description: 인증 실패

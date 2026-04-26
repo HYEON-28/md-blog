@@ -17,3 +17,20 @@
   - Build Tool: Vite
 - Backend: Spring Boot
 - DB: MySQL
+
+## 개발 방식 (Spec Driven Development)
+
+**새 기능 구현 전 반드시 스펙 먼저 작성한다.**
+
+- 스펙 문서 위치: `specs/` 디렉토리
+- 기능 스펙: `specs/features/*.md`
+- API 스펙: `specs/api/openapi.yaml`
+- DB 스키마 설명: `specs/db/schema.md`
+- 전체 목차: `specs/README.md`
+
+### 규칙
+1. 새 기능 → `specs/features/` 에 스펙 파일 작성 후 구현 시작
+2. API 추가/변경 → `specs/api/openapi.yaml` 먼저 수정
+3. 미구현 기능은 스펙 파일에 `Status: 미구현` 표시
+4. 구현 완료 시 스펙의 수용 기준 체크박스 업데이트
+5. `specs/README.md` 목차도 함께 업데이트

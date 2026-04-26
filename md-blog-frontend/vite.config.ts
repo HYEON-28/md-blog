@@ -9,7 +9,9 @@ export default defineConfig({
       "/api": "http://localhost:8080",
       "/oauth2": "http://localhost:8080",
       "/login": "http://localhost:8080",
-      "/auth": "http://localhost:8080",
+      "/auth/me": "http://localhost:8080",
+      "/auth/has-linked-repo": "http://localhost:8080",
+      "/auth/logout": "http://localhost:8080",
     },
   },
 })
