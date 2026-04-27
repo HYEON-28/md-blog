@@ -31,3 +31,12 @@
 |------|------|
 | API 스펙 (OpenAPI) | [api/openapi.yaml](api/openapi.yaml) |
 | DB 스키마 설명 | [db/schema.md](db/schema.md) |
+| 인프라 (AWS) | [infra/README.md](infra/README.md) |
+
+### 인프라
+| 영역 | 파일 |
+|------|------|
+| 네트워크 (VPC, 서브넷, Security Group) | [infra/network.md](infra/network.md) |
+| 데이터베이스 (RDS) | [infra/database.md](infra/database.md) |
+| 컴퓨트 (ECR, ECS, ALB) | [infra/compute.md](infra/compute.md) |
+| CDN 및 ALB 오리진 보호 (CloudFront, Route 53) | [infra/cdn-security.md](infra/cdn-security.md) |
