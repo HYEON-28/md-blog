@@ -1,5 +1,7 @@
 package com.md_blog.demo.blog.controller;
 
+import com.md_blog.demo.blog.dto.BlogFileContentResponse;
+import com.md_blog.demo.blog.dto.BlogFileTreeResponse;
 import com.md_blog.demo.blog.dto.BlogMainResponse;
 import com.md_blog.demo.blog.dto.BlogRepoIdsRequest;
 import com.md_blog.demo.blog.service.BlogService;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -21,6 +24,20 @@ public class BlogController {
     @GetMapping("/{username}")
     public ResponseEntity<BlogMainResponse> getBlogMain(@PathVariable String username) {
         return ResponseEntity.ok(blogService.getBlogMain(username));
+    }
+
+    @GetMapping("/{username}/file-tree")
+    public ResponseEntity<List<BlogFileTreeResponse>> getBlogFileTree(@PathVariable String username) {
+        return ResponseEntity.ok(blogService.getBlogFileTree(username));
+    }
+
+    @GetMapping("/{username}/file-content")
+    public ResponseEntity<BlogFileContentResponse> getBlogFileContent(
+            @PathVariable String username,
+            @RequestParam String repoFullName,
+            @RequestParam String path
+    ) {
+        return ResponseEntity.ok(blogService.getBlogFileContent(username, repoFullName, path));
     }
 
     @GetMapping("/repos")

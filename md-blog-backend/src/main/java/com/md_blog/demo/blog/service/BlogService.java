@@ -21,6 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import com.md_blog.demo.blog.dto.BlogFileContentResponse;
+import com.md_blog.demo.blog.dto.BlogFileTreeResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -94,6 +96,82 @@ public class BlogService {
         return repositoryJpaRepository.findAllById(repoIds).stream()
                 .map(RepositoryEntity::getGithubRepoId)
                 .collect(Collectors.toSet());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BlogFileTreeResponse> getBlogFileTree(String username) {
+        User user = userRepository.findByGithubUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        List<BlogRepositoryEntity> blogRepos = blogRepositoryJpaRepository.findByUserIdAndActiveTrue(user.getId());
+        if (blogRepos.isEmpty()) return List.of();
+
+        Set<UUID> userRepoIds = blogRepos.stream()
+                .map(BlogRepositoryEntity::getUserRepositoryId)
+                .collect(Collectors.toSet());
+        Map<UUID, UUID> userRepoIdToRepoId = userRepositoryJpaRepository.findAllById(userRepoIds).stream()
+                .collect(Collectors.toMap(UserRepositoryEntity::getId, UserRepositoryEntity::getRepositoryId));
+
+        Map<UUID, RepositoryEntity> repoById = repositoryJpaRepository
+                .findAllById(new HashSet<>(userRepoIdToRepoId.values())).stream()
+                .collect(Collectors.toMap(RepositoryEntity::getId, r -> r));
+
+        String token = user.getAccessToken();
+        return blogRepos.stream()
+                .map(br -> {
+                    UUID repoId = userRepoIdToRepoId.get(br.getUserRepositoryId());
+                    if (repoId == null) return null;
+                    RepositoryEntity repo = repoById.get(repoId);
+                    if (repo == null) return null;
+
+                    List<GithubApiService.TreeEntry> flatFiles = githubApiService.getMdFileTree(
+                            token, repo.getFullName(), repo.getDefaultBranch());
+                    List<BlogFileTreeResponse.FileTreeNode> tree = buildFileTree(flatFiles);
+
+                    return new BlogFileTreeResponse(repo.getName(), repo.getFullName(), tree);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public BlogFileContentResponse getBlogFileContent(String username, String repoFullName, String filePath) {
+        User user = userRepository.findByGithubUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        String content = githubApiService.getFileContent(user.getAccessToken(), repoFullName, filePath);
+        if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found");
+
+        return new BlogFileContentResponse(filePath, content);
+    }
+
+    private List<BlogFileTreeResponse.FileTreeNode> buildFileTree(List<GithubApiService.TreeEntry> entries) {
+        Map<String, BlogFileTreeResponse.FileTreeNode> folderMap = new LinkedHashMap<>();
+        List<BlogFileTreeResponse.FileTreeNode> roots = new ArrayList<>();
+
+        for (GithubApiService.TreeEntry entry : entries) {
+            String[] parts = entry.path().split("/");
+            List<BlogFileTreeResponse.FileTreeNode> current = roots;
+            StringBuilder pathBuilder = new StringBuilder();
+
+            for (int i = 0; i < parts.length - 1; i++) {
+                if (pathBuilder.length() > 0) pathBuilder.append("/");
+                pathBuilder.append(parts[i]);
+                String folderKey = pathBuilder.toString();
+
+                BlogFileTreeResponse.FileTreeNode folder = folderMap.get(folderKey);
+                if (folder == null) {
+                    folder = new BlogFileTreeResponse.FileTreeNode("folder", parts[i], null, new ArrayList<>());
+                    folderMap.put(folderKey, folder);
+                    current.add(folder);
+                }
+                current = folder.children();
+            }
+
+            current.add(new BlogFileTreeResponse.FileTreeNode("file", parts[parts.length - 1], entry.path(), null));
+        }
+
+        return roots;
     }
 
     public void addBlogRepos(User user, List<Long> githubRepoIds) {

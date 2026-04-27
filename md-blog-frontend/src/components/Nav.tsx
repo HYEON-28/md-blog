@@ -38,7 +38,7 @@ function Nav() {
   const current = LANG_OPTIONS.find((o) => o.value === lang) ?? LANG_OPTIONS[0];
 
   return (
-    <nav>
+    <nav className={styles.nav}>
       <Link to="/" className={styles.navLogo}>
         <svg viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg">
           <path

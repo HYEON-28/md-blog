@@ -22,3 +22,38 @@ export async function getBlogMain(username: string): Promise<BlogMain> {
   if (!res.ok) throw new Error("Failed to fetch blog");
   return res.json();
 }
+
+export interface FileTreeNode {
+  type: "file" | "folder";
+  name: string;
+  path: string | null;
+  children: FileTreeNode[] | null;
+}
+
+export interface BlogFileTreeRepo {
+  repoName: string;
+  repoFullName: string;
+  children: FileTreeNode[];
+}
+
+export async function getBlogFileTree(username: string): Promise<BlogFileTreeRepo[]> {
+  const res = await fetch(`${API_BASE_URL}/api/blog/${username}/file-tree`);
+  if (!res.ok) throw new Error("Failed to fetch file tree");
+  return res.json();
+}
+
+export interface BlogFileContent {
+  path: string;
+  content: string;
+}
+
+export async function getBlogFileContent(
+  username: string,
+  repoFullName: string,
+  path: string
+): Promise<BlogFileContent> {
+  const params = new URLSearchParams({ repoFullName, path });
+  const res = await fetch(`${API_BASE_URL}/api/blog/${username}/file-content?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch file content");
+  return res.json();
+}

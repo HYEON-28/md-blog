@@ -115,6 +115,49 @@ public class GithubApiService {
 
     public record ReadmeResponse(String name, String path, String content, String encoding) {}
 
+    /** 특정 파일의 raw markdown 내용 */
+    public String getFileContent(String accessToken, String fullName, String filePath) {
+        String uri = "/repos/" + fullName + "/contents/" + filePath;
+        try {
+            ReadmeResponse res = restClient.get()
+                    .uri(uri)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .body(ReadmeResponse.class);
+            if (res == null || res.content() == null) return null;
+            if ("base64".equalsIgnoreCase(res.encoding())) {
+                String cleaned = res.content().replaceAll("\\s+", "");
+                return new String(Base64.getDecoder().decode(cleaned), StandardCharsets.UTF_8);
+            }
+            return res.content();
+        } catch (RestClientException e) {
+            log.warn("GitHub file content fetch failed: {}/{} ({})", fullName, filePath, e.getMessage());
+            return null;
+        }
+    }
+
+    /** 레포의 MD 파일 목록 (재귀 트리) */
+    public List<TreeEntry> getMdFileTree(String accessToken, String fullName, String branch) {
+        String uri = "/repos/" + fullName + "/git/trees/" + branch + "?recursive=1";
+        try {
+            TreeResponse response = restClient.get()
+                    .uri(uri)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .body(TreeResponse.class);
+            if (response == null || response.tree() == null) return List.of();
+            return response.tree().stream()
+                    .filter(e -> "blob".equals(e.type()) && e.path().toLowerCase().endsWith(".md"))
+                    .toList();
+        } catch (RestClientException e) {
+            log.warn("GitHub tree fetch failed: {} ({})", fullName, e.getMessage());
+            return List.of();
+        }
+    }
+
+    public record TreeResponse(String sha, List<TreeEntry> tree) {}
+    public record TreeEntry(String path, String type, String sha, Long size) {}
+
     /** 특정 커밋의 파일 변경 상세 */
     public CommitDetail getCommitDetail(String accessToken, String fullName, String sha) {
         String uri = "/repos/" + fullName + "/commits/" + sha;

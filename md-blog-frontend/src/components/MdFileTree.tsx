@@ -1,83 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getBlogFileTree, type BlogFileTreeRepo, type FileTreeNode } from "../api/blogApi";
+import { useLang } from "../context/LangContext";
+import { useGoogleTranslate } from "../hooks/useGoogleTranslate";
 import styles from "./MdFileTree.module.css";
-
-export type TreeNode =
-  | { type: "file"; name: string; path: string }
-  | { type: "folder"; name: string; children: TreeNode[] };
-
-export interface RepoTree {
-  repoName: string;
-  children: TreeNode[];
-}
-
-// TODO: 백엔드 연동 시 API 응답으로 대체
-const HARDCODED_TREES: RepoTree[] = [
-  {
-    repoName: "md-blog",
-    children: [
-      { type: "file", name: "README.md", path: "README.md" },
-      {
-        type: "folder",
-        name: "docs",
-        children: [
-          { type: "file", name: "architecture.md", path: "docs/architecture.md" },
-          { type: "file", name: "deployment.md", path: "docs/deployment.md" },
-          {
-            type: "folder",
-            name: "api",
-            children: [
-              { type: "file", name: "auth.md", path: "docs/api/auth.md" },
-              { type: "file", name: "blog.md", path: "docs/api/blog.md" },
-            ],
-          },
-        ],
-      },
-      {
-        type: "folder",
-        name: "notes",
-        children: [
-          { type: "file", name: "ideas.md", path: "notes/ideas.md" },
-        ],
-      },
-    ],
-  },
-  {
-    repoName: "awesome-cli",
-    children: [
-      { type: "file", name: "README.md", path: "README.md" },
-      {
-        type: "folder",
-        name: "docs",
-        children: [
-          { type: "file", name: "usage.md", path: "docs/usage.md" },
-          { type: "file", name: "examples.md", path: "docs/examples.md" },
-        ],
-      },
-    ],
-  },
-  {
-    repoName: "study-notes",
-    children: [
-      { type: "file", name: "README.md", path: "README.md" },
-      {
-        type: "folder",
-        name: "algorithms",
-        children: [
-          { type: "file", name: "sorting.md", path: "algorithms/sorting.md" },
-          { type: "file", name: "trees.md", path: "algorithms/trees.md" },
-        ],
-      },
-      {
-        type: "folder",
-        name: "system-design",
-        children: [
-          { type: "file", name: "caching.md", path: "system-design/caching.md" },
-          { type: "file", name: "queues.md", path: "system-design/queues.md" },
-        ],
-      },
-    ],
-  },
-];
 
 function FolderIcon({ open }: { open: boolean }) {
   return (
@@ -120,22 +45,31 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-function NodeView({ node, depth }: { node: TreeNode; depth: number }) {
+interface NodeViewProps {
+  node: FileTreeNode;
+  depth: number;
+  repoFullName: string;
+  selectedPath: string | null;
+  onFileSelect: (repoFullName: string, path: string) => void;
+}
+
+function NodeView({ node, depth, repoFullName, selectedPath, onFileSelect }: NodeViewProps) {
   const [open, setOpen] = useState(depth < 1);
 
   if (node.type === "file") {
+    const isSelected = node.path === selectedPath;
     return (
-      <div
-        className={styles.row}
+      <button
+        type="button"
+        className={`${styles.row} ${styles.rowButton} ${isSelected ? styles.rowSelected : ""}`}
         style={{ paddingLeft: 12 + depth * 14 }}
         role="treeitem"
+        onClick={() => onFileSelect(repoFullName, node.path!)}
       >
         <span className={styles.iconSlot} aria-hidden="true" />
         <FileIcon />
-        <span className={styles.label} translate="no">
-          {node.name}
-        </span>
-      </div>
+        <span className={styles.label}>{node.name}</span>
+      </button>
     );
   }
 
@@ -149,14 +83,19 @@ function NodeView({ node, depth }: { node: TreeNode; depth: number }) {
       >
         <Chevron open={open} />
         <FolderIcon open={open} />
-        <span className={styles.label} translate="no">
-          {node.name}
-        </span>
+        <span className={styles.label}>{node.name}</span>
       </button>
       {open && (
         <div role="group">
-          {node.children.map((child, i) => (
-            <NodeView key={i} node={child} depth={depth + 1} />
+          {(node.children ?? []).map((child, i) => (
+            <NodeView
+              key={i}
+              node={child}
+              depth={depth + 1}
+              repoFullName={repoFullName}
+              selectedPath={selectedPath}
+              onFileSelect={onFileSelect}
+            />
           ))}
         </div>
       )}
@@ -164,7 +103,13 @@ function NodeView({ node, depth }: { node: TreeNode; depth: number }) {
   );
 }
 
-function RepoSection({ tree }: { tree: RepoTree }) {
+interface RepoSectionProps {
+  tree: BlogFileTreeRepo;
+  selectedPath: string | null;
+  onFileSelect: (repoFullName: string, path: string) => void;
+}
+
+function RepoSection({ tree, selectedPath, onFileSelect }: RepoSectionProps) {
   const [open, setOpen] = useState(true);
   return (
     <div className={styles.repo}>
@@ -182,7 +127,14 @@ function RepoSection({ tree }: { tree: RepoTree }) {
       {open && (
         <div className={styles.repoChildren} role="group">
           {tree.children.map((child, i) => (
-            <NodeView key={i} node={child} depth={0} />
+            <NodeView
+              key={i}
+              node={child}
+              depth={0}
+              repoFullName={tree.repoFullName}
+              selectedPath={selectedPath}
+              onFileSelect={onFileSelect}
+            />
           ))}
         </div>
       )}
@@ -190,13 +142,57 @@ function RepoSection({ tree }: { tree: RepoTree }) {
   );
 }
 
-export default function MdFileTree() {
+interface Props {
+  username: string;
+  selectedPath: string | null;
+  onFileSelect: (repoFullName: string, path: string) => void;
+}
+
+export default function MdFileTree({ username, selectedPath, onFileSelect }: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [repos, setRepos] = useState<BlogFileTreeRepo[]>([]);
+  const { lang } = useLang();
+  const { translateTo } = useGoogleTranslate();
+
+  useEffect(() => {
+    getBlogFileTree(username)
+      .then((data) => {
+        setRepos(data);
+        translateTo(lang);
+      })
+      .catch(() => setRepos([]));
+  }, [username]);
+
   return (
     <nav className={styles.tree} aria-label="md 파일 트리" role="tree">
-      <p className={styles.title}>Files</p>
-      {HARDCODED_TREES.map((tree) => (
-        <RepoSection key={tree.repoName} tree={tree} />
-      ))}
+      <button
+        type="button"
+        className={styles.mobileToggle}
+        onClick={() => setMobileOpen((v) => !v)}
+        aria-expanded={mobileOpen}
+      >
+        <span className={styles.mobileToggleLabel}>Files</span>
+        <svg
+          viewBox="0 0 16 16"
+          className={`${styles.toggleChevron}${mobileOpen ? " " + styles.toggleChevronOpen : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      <div className={`${styles.treeBody}${mobileOpen ? " " + styles.treeBodyOpen : ""}`}>
+        <p className={styles.title}>Files</p>
+        {repos.map((tree) => (
+          <RepoSection
+            key={tree.repoName}
+            tree={tree}
+            selectedPath={selectedPath}
+            onFileSelect={onFileSelect}
+          />
+        ))}
+      </div>
     </nav>
   );
 }

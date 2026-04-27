@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { getBlogMain, type BlogMain, type BlogRepo } from "../api/blogApi";
+import { getBlogMain, getBlogFileContent, type BlogMain, type BlogRepo } from "../api/blogApi";
 import BlogNav from "../components/BlogNav";
 import MdFileTree from "../components/MdFileTree";
 import { useLang } from "../context/LangContext";
@@ -9,7 +9,6 @@ import { useGoogleTranslate } from "../hooks/useGoogleTranslate";
 import styles from "./BlogMain.module.css";
 
 const MARKDOWN_COMPONENTS = {
-  // 코드/코드블록은 자동 번역에서 제외
   pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
     <pre translate="no" className="notranslate" {...props} />
   ),
@@ -47,6 +46,36 @@ function ReadmePostView({ repo }: { repo: BlogRepo }) {
   );
 }
 
+interface FilePostViewProps {
+  path: string;
+  content: string;
+  onBack: () => void;
+}
+
+function FilePostView({ path, content, onBack }: FilePostViewProps) {
+  const fileName = path.split("/").pop() ?? path;
+  return (
+    <article className={styles.post}>
+      <header className={styles.postHeader}>
+        <button type="button" className={styles.backButton} onClick={onBack}>
+          ← 전체 보기
+        </button>
+        <h2 className={styles.postTitle}>
+          <span className={styles.postTitleLink} translate="no">
+            {fileName}
+          </span>
+        </h2>
+        <p className={styles.filePath} translate="no">{path}</p>
+      </header>
+      <div className={styles.postBody}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+          {content}
+        </ReactMarkdown>
+      </div>
+    </article>
+  );
+}
+
 interface Props {
   username: string;
 }
@@ -58,6 +87,10 @@ export default function BlogMain({ username }: Props) {
   const { lang } = useLang();
   const { translateTo } = useGoogleTranslate();
 
+  const [selectedFile, setSelectedFile] = useState<{ repoFullName: string; path: string } | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fileLoading, setFileLoading] = useState(false);
+
   useEffect(() => {
     getBlogMain(username)
       .then(setBlog)
@@ -67,11 +100,29 @@ export default function BlogMain({ username }: Props) {
       });
   }, [username]);
 
-  // README 로드 후 / 저장된 언어 변경 시 번역 적용
   useEffect(() => {
     if (!blog) return;
     translateTo(lang);
   }, [blog, lang, translateTo]);
+
+  useEffect(() => {
+    if (!selectedFile) return;
+    setFileLoading(true);
+    setFileContent(null);
+    getBlogFileContent(username, selectedFile.repoFullName, selectedFile.path)
+      .then((data) => setFileContent(data.content))
+      .catch(() => setFileContent(null))
+      .finally(() => setFileLoading(false));
+  }, [selectedFile, username]);
+
+  const handleFileSelect = (repoFullName: string, path: string) => {
+    setSelectedFile({ repoFullName, path });
+  };
+
+  const handleBack = () => {
+    setSelectedFile(null);
+    setFileContent(null);
+  };
 
   if (error) {
     return (
@@ -105,7 +156,11 @@ export default function BlogMain({ username }: Props) {
 
       <div className={styles.layout}>
         <aside className={styles.sidebar}>
-          <MdFileTree />
+          <MdFileTree
+            username={username}
+            selectedPath={selectedFile?.path ?? null}
+            onFileSelect={handleFileSelect}
+          />
         </aside>
 
         <main className={styles.content}>
@@ -134,7 +189,19 @@ export default function BlogMain({ username }: Props) {
           </section>
 
           <section className={styles.postsSection}>
-            {blog.repos.length === 0 ? (
+            {selectedFile ? (
+              fileLoading ? (
+                <p className={styles.loading}>불러오는 중...</p>
+              ) : fileContent !== null ? (
+                <FilePostView
+                  path={selectedFile.path}
+                  content={fileContent}
+                  onBack={handleBack}
+                />
+              ) : (
+                <p className={styles.empty}>파일을 불러올 수 없습니다.</p>
+              )
+            ) : blog.repos.length === 0 ? (
               <p className={styles.empty}>공개된 프로젝트가 없습니다.</p>
             ) : (
               <div className={styles.postsList}>

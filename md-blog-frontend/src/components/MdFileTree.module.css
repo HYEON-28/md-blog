@@ -3,7 +3,7 @@
   font-size: 13.5px;
   color: #1f2328;
   background: #ffffff;
-  border: 3px solid limegreen; /* 디버그: 트리 카드 영역 표시 */
+  border: none;
   border-radius: 14px;
   padding: 16px 8px 12px;
   box-shadow:
@@ -13,6 +13,16 @@
   width: 307px;
   box-sizing: border-box;
   margin: 0;
+}
+
+/* ── 모바일 토글 버튼 (데스크톱에서 숨김) ─── */
+.mobileToggle {
+  display: none;
+}
+
+/* ── 트리 본문 래퍼 ── */
+.treeBody {
+  display: block;
 }
 
 .title {
@@ -107,6 +117,12 @@ a.row:hover {
   color: #4f46e5;
 }
 
+.rowSelected {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 0%, rgba(255, 107, 138, 0.08) 100%);
+  color: #4f46e5;
+  font-weight: 600;
+}
+
 .iconSlot {
   display: inline-block;
   width: 12px;
@@ -144,4 +160,69 @@ a.row:hover {
 
 .chevronOpen {
   transform: rotate(90deg);
+}
+
+/* ── 모바일 (< 768px) ───────────────────── */
+@media (max-width: 767px) {
+  .tree {
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  .mobileToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6e7781;
+  }
+
+  .mobileToggleLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toggleChevron {
+    width: 14px;
+    height: 14px;
+    color: #6e7781;
+    transition: transform 0.18s;
+    flex-shrink: 0;
+  }
+
+  .toggleChevronOpen {
+    transform: rotate(180deg);
+  }
+
+  /* 모바일에서 트리 본문: 기본 숨김, 열리면 표시 */
+  .treeBody {
+    display: none;
+    overflow-y: auto;
+    max-height: 220px;
+    padding: 0 8px 8px;
+    border-top: 1px solid #eaecef;
+  }
+
+  .treeBodyOpen {
+    display: block;
+  }
+
+  /* 데스크톱용 타이틀은 모바일에서 숨김 (토글 버튼이 대신함) */
+  .title {
+    display: none;
+  }
 }

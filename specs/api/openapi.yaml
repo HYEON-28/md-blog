@@ -205,6 +205,37 @@ components:
           items:
             $ref: '#/components/schemas/BlogRepo'
 
+    FileTreeNode:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [file, folder]
+        name:
+          type: string
+        path:
+          type: string
+          nullable: true
+          description: 파일일 때 레포 루트 기준 상대 경로. 폴더는 null.
+        children:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/FileTreeNode'
+          description: 폴더일 때 자식 노드 목록. 파일은 null.
+
+    BlogFileTreeRepo:
+      type: object
+      properties:
+        repoName:
+          type: string
+        repoFullName:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileTreeNode'
+
 paths:
   # ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -387,6 +418,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlogMain'
+        '404':
+          description: 유저 없음
+
+  /api/blog/{username}/file-tree:
+    get:
+      tags: [Blog]
+      summary: 블로그 MD 파일 트리
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 레포별 MD 파일 트리
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BlogFileTreeRepo'
         '404':
           description: 유저 없음
 
