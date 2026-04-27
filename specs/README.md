@@ -30,3 +30,8 @@
 |------|------|
 | API 스펙 (OpenAPI) | [api/openapi.yaml](api/openapi.yaml) |
 | DB 스키마 설명 | [db/schema.md](db/schema.md) |
+
+### 환경 설정
+| 문서 | 파일 |
+|------|------|
+| 새 컴퓨터 환경 파일 이전 가이드 | [setup/environment-files.md](setup/environment-files.md) |
