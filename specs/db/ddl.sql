@@ -122,7 +122,6 @@ CREATE TABLE blog_repositories (
 
   PRIMARY KEY (id),
   UNIQUE KEY uq_blog_repo (user_id, user_repository_id),
-  UNIQUE KEY uq_blog_slug (user_id, custom_slug),    -- 같은 유저 내 slug 중복 방지
   CONSTRAINT fk_br_user            FOREIGN KEY (user_id)            REFERENCES users(id),
   CONSTRAINT fk_br_user_repository FOREIGN KEY (user_repository_id) REFERENCES user_repositories(id),
   CONSTRAINT fk_br_snapshot        FOREIGN KEY (snapshot_id)        REFERENCES repository_snapshots(id)

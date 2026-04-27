@@ -35,6 +35,7 @@
 | ------------------ | ------------------------------------ |
 | API 스펙 (OpenAPI) | [api/openapi.yaml](api/openapi.yaml) |
 | DB 스키마 설명     | [db/schema.md](db/schema.md)         |
+| DB DDL             | [db/ddl.sql](db/ddl.sql)             |
 
 ### 환경 설정
 
