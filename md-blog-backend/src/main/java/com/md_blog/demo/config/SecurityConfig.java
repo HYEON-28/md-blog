@@ -1,6 +1,5 @@
 package com.md_blog.demo.config;
 
-import com.md_blog.demo.auth.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.md_blog.demo.auth.handler.OAuth2FailureHandler;
 import com.md_blog.demo.auth.handler.OAuth2SuccessHandler;
 import com.md_blog.demo.auth.jwt.JwtAuthFilter;
@@ -32,7 +31,6 @@ public class SecurityConfig {
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
-    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -51,8 +49,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(auth ->
-                                auth.authorizationRequestRepository(cookieAuthorizationRequestRepository))
                         .userInfoEndpoint(userInfo ->
                                 userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)

@@ -31,7 +31,14 @@
       "Bash(curl -v https://md-blog.org --max-time 15)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('ETag:', d['ETag']\\); print\\('Cert ARN:', d['DistributionConfig']['ViewerCertificate'].get\\('ACMCertificateArn','none'\\)\\)\")",
       "Bash(python3 *)",
-      "Bash(aws ecs describe-services *)"
+      "Bash(aws ecs describe-services *)",
+      "Bash(./gradlew compileJava)",
+      "Bash(ssh -v -i /Users/yeseollee/key/bastion-ec2-key2.pem ec2-user@54.180.162.97)",
+      "Bash(dig +short hyeon-28.md-blog.org)",
+      "Bash(dig +short md-blog.org)",
+      "Bash(dig +short api.md-blog.org)",
+      "Bash(curl -v -o /dev/null https://hyeon-28.md-blog.org)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" -L --max-redirs 5 https://hyeon-28.md-blog.org)"
     ]
   }
 }

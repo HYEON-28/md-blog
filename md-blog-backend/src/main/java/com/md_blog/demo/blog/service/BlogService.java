@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import com.md_blog.demo.blog.dto.BlogFileContentResponse;
 import com.md_blog.demo.blog.dto.BlogFileTreeResponse;
@@ -28,6 +31,9 @@ import com.md_blog.demo.blog.dto.BlogFileTreeResponse;
 @RequiredArgsConstructor
 @Transactional
 public class BlogService {
+
+    // GitHub API 호출을 병렬로 실행하기 위한 가상 스레드 실행기 (Java 21)
+    private static final ExecutorService VIRTUAL_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private final BlogRepositoryJpaRepository blogRepositoryJpaRepository;
     private final RepositoryJpaRepository repositoryJpaRepository;
@@ -57,8 +63,9 @@ public class BlogService {
                 .collect(Collectors.toMap(RepositoryEntity::getId, r -> r));
 
         String token = user.getAccessToken();
-        List<BlogRepoResponse> repos = blogRepos.stream()
-                .map(br -> {
+        // GitHub API 호출을 가상 스레드로 병렬 실행 (레포 수만큼 순차→동시 실행으로 단축)
+        List<CompletableFuture<BlogRepoResponse>> futures = blogRepos.stream()
+                .map(br -> CompletableFuture.supplyAsync(() -> {
                     UUID repoId = userRepoIdToRepoId.get(br.getUserRepositoryId());
                     if (repoId == null) return null;
                     RepositoryEntity repo = repoById.get(repoId);
@@ -72,7 +79,11 @@ public class BlogService {
                             repo.getHtmlUrl(),
                             readme
                     );
-                })
+                }, VIRTUAL_EXECUTOR))
+                .toList();
+
+        List<BlogRepoResponse> repos = futures.stream()
+                .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .toList();
 
@@ -117,8 +128,8 @@ public class BlogService {
                 .collect(Collectors.toMap(RepositoryEntity::getId, r -> r));
 
         String token = user.getAccessToken();
-        return blogRepos.stream()
-                .map(br -> {
+        List<CompletableFuture<BlogFileTreeResponse>> treeFutures = blogRepos.stream()
+                .map(br -> CompletableFuture.supplyAsync(() -> {
                     UUID repoId = userRepoIdToRepoId.get(br.getUserRepositoryId());
                     if (repoId == null) return null;
                     RepositoryEntity repo = repoById.get(repoId);
@@ -129,7 +140,11 @@ public class BlogService {
                     List<BlogFileTreeResponse.FileTreeNode> tree = buildFileTree(flatFiles);
 
                     return new BlogFileTreeResponse(repo.getName(), repo.getFullName(), tree);
-                })
+                }, VIRTUAL_EXECUTOR))
+                .toList();
+
+        return treeFutures.stream()
+                .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .toList();
     }
