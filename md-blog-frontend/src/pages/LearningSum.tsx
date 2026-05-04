@@ -27,7 +27,7 @@ function LearningSum() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [prompt, setPrompt] = useState(t.default_prompt);
   const [summarizing, setSummarizing] = useState(false);
-  const [summary, setSummary] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
   const [posting, setPosting] = useState(false);
@@ -91,7 +91,7 @@ function LearningSum() {
   const handleSummarize = async () => {
     if (!token || selected.size === 0) return;
     setSummarizing(true);
-    setSummary(null);
+    setSummary("");
     setError(null);
     setTweetStatus(null);
     try {
@@ -132,7 +132,7 @@ function LearningSum() {
   };
 
   const updatedFullNames = new Set(todayUpdates.map((u) => u.repoFullName));
-  const charCount = summary?.length ?? 0;
+  const charCount = summary.length;
   const overLimit = charCount > 280;
 
   return (
@@ -226,56 +226,54 @@ function LearningSum() {
 
         {error && <div className={styles.errorText}>{error}</div>}
 
-        {summary !== null && (
-          <div className={styles.resultCard}>
-            <div className={styles.resultHeader}>
-              <span className={styles.resultTitle}>{t.result_title}</span>
-              <span className={styles.resultBadge}>{t.result_badge}</span>
-              <span className={`${styles.charCount} ${overLimit ? styles.charCountOver : ""}`}>
-                {t.char_count(charCount)}
-              </span>
-            </div>
-            <textarea
-              className={styles.resultTextarea}
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              rows={6}
-            />
-            <div className={styles.resultFooter}>
-              {tweetStatus === "success" && (
-                <span className={styles.tweetSuccess}>{t.twitter_success}</span>
-              )}
-              {tweetStatus === "linked" && (
-                <span className={styles.tweetSuccess}>{t.twitter_linked}</span>
-              )}
-              {tweetStatus === "error" && (
-                <span className={styles.tweetError}>{t.twitter_error}</span>
-              )}
-              {tweetStatus === "reconnect" && (
-                <span className={styles.tweetError}>{t.twitter_reconnect}</span>
-              )}
-              <button
-                className={styles.xBtn}
-                onClick={handlePostToX}
-                disabled={posting || !summary}
-              >
-                {posting ? (
-                  <>
-                    <div className={styles.spinnerDark} />
-                    {t.btn_posting_x}
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" className={styles.xIcon} aria-hidden="true">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                    {user?.twitterConnected ? t.btn_post_x : t.btn_connect_x}
-                  </>
-                )}
-              </button>
-            </div>
+        <div className={styles.resultCard}>
+          <div className={styles.resultHeader}>
+            <span className={styles.resultTitle}>{t.result_title}</span>
+            <span className={styles.resultBadge}>{t.result_badge}</span>
+            <span className={`${styles.charCount} ${overLimit ? styles.charCountOver : ""}`}>
+              {t.char_count(charCount)}
+            </span>
           </div>
-        )}
+          <textarea
+            className={styles.resultTextarea}
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            rows={6}
+          />
+          <div className={styles.resultFooter}>
+            {tweetStatus === "success" && (
+              <span className={styles.tweetSuccess}>{t.twitter_success}</span>
+            )}
+            {tweetStatus === "linked" && (
+              <span className={styles.tweetSuccess}>{t.twitter_linked}</span>
+            )}
+            {tweetStatus === "error" && (
+              <span className={styles.tweetError}>{t.twitter_error}</span>
+            )}
+            {tweetStatus === "reconnect" && (
+              <span className={styles.tweetError}>{t.twitter_reconnect}</span>
+            )}
+            <button
+              className={styles.xBtn}
+              onClick={handlePostToX}
+              disabled={posting || !summary}
+            >
+              {posting ? (
+                <>
+                  <div className={styles.spinnerDark} />
+                  {t.btn_posting_x}
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" className={styles.xIcon} aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  {user?.twitterConnected ? t.btn_post_x : t.btn_connect_x}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </main>
       <Footer />
     </>
