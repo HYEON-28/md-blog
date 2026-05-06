@@ -149,3 +149,71 @@ private String twitterRefreshToken;
 ### 2차: 콜백 단계에서 `?twitterError=true` 발생 (조사 중)
 
 위 가이드 절차로 CloudWatch 로그 확인 필요.
+
+### 3차: 프론트 fetch에 `credentials: "include"` 누락 발견 (적용)
+
+#### 추가 분석
+
+이 파일의 1단계 가이드 외에, 실제 코드를 다시 정독한 결과 **위 가이드에 없는 새로운 원인**을 발견:
+
+- 현재 코드는 이미 쿠키 기반 state로 전환되어 있어 (`TwitterService.java:57-71`, `TwitterController.java:39-46`) "원인 1: state 저장소가 메모리" 문제는 해당하지 않음. 즉 in-memory `TwitterPendingAuthStore`는 더 이상 존재하지 않으므로 그 분기는 무효.
+- 대신, **프론트의 `getTwitterAuthUrl()` fetch가 `credentials: "include"`를 지정하지 않아 cross-origin 응답의 `Set-Cookie`가 브라우저에 저장되지 않음**. fetch의 `credentials` 기본값은 `"same-origin"`이라 `md-blog.org → api.md-blog.org` 같은 cross-origin 호출에서는 응답 쿠키를 무시.
+
+##### 실패 시퀀스
+
+```
+1) 프론트(md-blog.org): fetch GET https://api.md-blog.org/api/twitter/auth-url
+   - 백엔드 응답: 200 OK
+     Set-Cookie: twitter_pending_auth=<base64>; Path=/api/twitter/callback;
+                 Secure; HttpOnly; SameSite=Lax; Max-Age=600
+   - 브라우저: credentials 옵션이 없으므로 응답 쿠키 폐기 ← 여기서 끊김
+2) 프론트: window.location.href = authUrl 로 X 이동
+3) 사용자가 X에서 Authorize 클릭
+4) X → 302 https://api.md-blog.org/api/twitter/callback?code=...&state=...
+   - 브라우저: 저장된 twitter_pending_auth 쿠키 없음 → 헤더 미포함 전송
+5) TwitterService.handleCallback() → decodeCookie(state, null)
+   → IllegalStateException("Missing twitter_pending_auth cookie")
+   → catch → frontendUrl + "/learning-summary?twitterError=true"
+```
+
+##### 백엔드 측은 이미 준비되어 있음
+
+- `SecurityConfig.corsConfigurationSource()`: `setAllowCredentials(true)` 및
+  `setAllowedOriginPatterns(List.of(frontendUrl, "https://*.md-blog.org", "http://*.localhost:5173"))`
+  → credentialed CORS 요청을 받을 수 있는 상태.
+- 콜백 자체는 top-level GET 리다이렉트 + `SameSite=Lax` 이므로 X → 백엔드 흐름에서 쿠키가 차단되는 정책 문제는 없음 (단, "쿠키가 저장되어 있어야" 한다는 전제).
+
+#### 적용한 수정
+
+`md-blog-frontend/src/api/twitterApi.ts` 의 두 fetch에 `credentials: "include"` 추가.
+
+- `getTwitterAuthUrl`: Set-Cookie를 저장하기 위해 필수.
+- `postTweet`: 일관성 + 향후 쿠키 기반 인증 확장 대비 (현재는 Bearer 토큰만 쓰지만 무해).
+
+```ts
+// Before
+const res = await fetch(`${BASE_URL}/api/twitter/auth-url`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+// After
+const res = await fetch(`${BASE_URL}/api/twitter/auth-url`, {
+  headers: { Authorization: `Bearer ${token}` },
+  credentials: "include",
+});
+```
+
+#### 검증 방법
+
+1. 로컬에서 운영 빌드로 띄우거나 운영 배포 후 `/learning-summary`에서 X 연동 시도.
+2. DevTools → Network 탭에서:
+   - `/api/twitter/auth-url` 응답에 `Set-Cookie: twitter_pending_auth=...` 가 있는지
+   - DevTools → Application → Cookies → `https://api.md-blog.org` 에 `twitter_pending_auth` 가 들어왔는지
+3. X에서 Authorize 후 `/api/twitter/callback?code=...&state=...` 요청의 Request Headers에 `Cookie: twitter_pending_auth=...` 가 함께 가는지.
+4. 최종적으로 `?twitterLinked=true` 로 돌아오면 성공.
+
+만약 그래도 `?twitterError=true` 가 뜬다면, 이번에는 쿠키 문제가 아니라 토큰 교환 단계 실패이므로 CloudWatch에서 `Twitter callback failed` 의 `Caused by:`를 확인할 차례. (의심 순서: 원인 2 → 원인 3)
+
+#### 추후 추가 개선 후보
+
+콜백 실패 시 원인을 프론트에서 구분할 수 있도록 `?twitterError=cookie_missing | state_mismatch | token_exchange_failed | user_info_failed` 로 세분화하면 다음 디버깅이 훨씬 빠름. 현재는 모두 한 묶음의 `?twitterError=true` 라 매번 CloudWatch를 봐야 함.

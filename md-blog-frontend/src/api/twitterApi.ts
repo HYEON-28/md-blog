@@ -3,6 +3,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 export async function getTwitterAuthUrl(token: string): Promise<string> {
   const res = await fetch(`${BASE_URL}/api/twitter/auth-url`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to get Twitter auth URL");
   const data: { authUrl: string } = await res.json();
@@ -17,6 +18,7 @@ export async function postTweet(token: string, text: string): Promise<void> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ text }),
+    credentials: "include",
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
