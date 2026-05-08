@@ -85,20 +85,18 @@ function NodeView({ node, depth, repoFullName, selectedPath, onFileSelect }: Nod
         <FolderIcon open={open} />
         <span className={styles.label}>{node.name}</span>
       </button>
-      {open && (
-        <div role="group">
-          {(node.children ?? []).map((child, i) => (
-            <NodeView
-              key={i}
-              node={child}
-              depth={depth + 1}
-              repoFullName={repoFullName}
-              selectedPath={selectedPath}
-              onFileSelect={onFileSelect}
-            />
-          ))}
-        </div>
-      )}
+      <div role="group" style={open ? undefined : { display: "none" }}>
+        {(node.children ?? []).map((child, i) => (
+          <NodeView
+            key={i}
+            node={child}
+            depth={depth + 1}
+            repoFullName={repoFullName}
+            selectedPath={selectedPath}
+            onFileSelect={onFileSelect}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -124,20 +122,18 @@ function RepoSection({ tree, selectedPath, onFileSelect }: RepoSectionProps) {
           {tree.repoName}
         </span>
       </button>
-      {open && (
-        <div className={styles.repoChildren} role="group">
-          {tree.children.map((child, i) => (
-            <NodeView
-              key={i}
-              node={child}
-              depth={0}
-              repoFullName={tree.repoFullName}
-              selectedPath={selectedPath}
-              onFileSelect={onFileSelect}
-            />
-          ))}
-        </div>
-      )}
+      <div className={styles.repoChildren} role="group" style={open ? undefined : { display: "none" }}>
+        {tree.children.map((child, i) => (
+          <NodeView
+            key={i}
+            node={child}
+            depth={0}
+            repoFullName={tree.repoFullName}
+            selectedPath={selectedPath}
+            onFileSelect={onFileSelect}
+          />
+        ))}
+      </div>
     </div>
   );
 }
